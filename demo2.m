@@ -83,7 +83,7 @@ for i = 1:1:num_of_scales
 	
     fprintf("Frequency scale: %dHz-%dHz\n",f1,f2);
     fprintf("variance = %f\n", var(i));
-	fprintf("skewness = %f\n", skw(i));
+    fprintf("skewness = %f\n", skw(i));
     fprintf("kurtosis = %f\n", krt(i));
     fprintf("==========================\n");
     fprintf("\n");
