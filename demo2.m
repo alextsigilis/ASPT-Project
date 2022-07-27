@@ -1,5 +1,9 @@
 % ==================================================
 % Demo Script (2)
+% --------------------------------------------------
+% 
+% Author: Christodoulos Michaelides, July 2022
+% --------------------------------------------------
 %
 % Objectives:
 % --------------------------------------------------
@@ -55,7 +59,7 @@ sig = cell2mat(sig);
 % ==================================================
 
 % Logical array for selecting reconstruction elements
-levelForReconstruction = (1:1:levels) >= pivot;
+levelForReconstruction = (1:1:num_of_scales) >= pivot;
 
 % Perform the decomposition using modwt
 wt = modwt(sig,wavelet,levels);
