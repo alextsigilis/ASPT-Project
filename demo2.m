@@ -10,40 +10,58 @@
 clear all; clc;
 
 % ==================================================
-% Read EEG recordings from the EDF file
+% 0) Parameters for Wavelet Analysis
 % ==================================================
 
-X = edfread("SN001.edf");      % Read the first EDF file
+input_file = "SN001.edf";        % name of input file for EEG recordings
+channel = "EEGF4_M1";            % name of selected EEG/EOG/ECG channel
+start = duration("00:00:00");    % starting point of EEG/EOG/ECG segment
+range = duration("00:00:30");    % duration of EEG/EOG/ECG segment
+wavelet = "db5";                 % wavelet type for MRA decomposition
+fs = 256;                        % sampling frequency for EEG recording
+levels = 7;                      % number of levels on MRA binary tree
+pivot = 5;                       % Use every scale after pivot for 
+                                 % reconstruction (including pivot)
 
-t0 = duration("00:00:00");     
-dt = duration("00:00:30");
-range = timerange(t0,t0+dt);
+% =========================================================================
+% Do NOT change anything below that point,
+% unless you know what you are doing.
 
-sig = X{range,"EEGF4_M1"};     % extract the first 30 seconds
-                               % from the F4-M1 EEG channel
+% Construct the time axis of the EEG segment
+t0 = seconds(start);
+t1 = seconds(start+range);
+time = linspace(t0,t1,fs*(t1-t0));
 
-sig = cell2mat(sig);           % cell-array => 1D array
+num_of_scales = levels + 1;        % number of frequency scales
+scales = (fs/2) * 2.^-[0:levels];  % frequency boundaries for every scale
+scales = [scales 0];
+
+% ==================================================
+% 1) Read EEG recordings from the EDF file
+% ==================================================
+
+ % Read the EDF file
+X = edfread(input_file);
+
+% extract a small segment from the selected EEG channel
+interval = timerange(start,start+range);
+sig = X{interval,channel};      
+
+% Convert cell-array into 1D-array
+sig = cell2mat(sig);          
 
 % ==================================================
 % 2) Perform MRA Decomposition and Reconstruction
 % ==================================================
 
 % Logical array for selecting reconstruction elements
-levelForReconstruction = [
-    false, ...     % discard details at level 1    (scale: 64Hz-128Hz)
-    false, ...     % discard details at level 2    (scale: 32Hz-64Hz)
-    false, ...     % discard details at level 3    (scale: 16Hz-32Hz)
-    false, ...     % discard details at level 4    (scale: 8Hz-16Hz)
-    true,  ...     % keep details at level 5       (scale: 4Hz-8Hz)
-    true,  ...     % keep details at level 6       (scale: 2Hz-4Hz)
-    true,  ...     % keep details at level 7       (scale: 1Hz-2Hz)
-    true];         % keep approximation at level 7 (scale: 0Hz-1Hz)
+levelForReconstruction = (1:1:levels) >= pivot;
 
 % Perform the decomposition using modwt
-wt = modwt(sig,'db5',7);
+wt = modwt(sig,wavelet,levels);
 
 % Construct MRA matrix using modwtmra
-mra = modwtmra(wt,'db5');
+mra = modwtmra(wt,wavelet);
 
 % Sum down the rows of the selected multiresolution signals
 sig1 = sum(mra(levelForReconstruction,:),1);
@@ -51,10 +69,6 @@ sig1 = sum(mra(levelForReconstruction,:),1);
 % ==========================================================
 % 3) Plot the results
 % ==========================================================
-
-% Add a time axis
-t0 = 0; dt = 30; fs = 256;
-time = linspace(t0,t0+dt,dt*fs);
 
 % Original (sig) vs Reconstructed (sig1)
 figure(1); 
@@ -66,6 +80,26 @@ ylabel('Amplitude in microvolts');
 title('Original vs Reconstructed Signal');
 legend("original", "reconstructed");
 
+% Plot every frequency scale (both selected and discarded ones)
+figure(2);
+
+for i = 1:1:num_of_scales
+    subplot(num_of_scales,1,i);
+    plot(time, mra(i,:));
+    xlabel('time');
+    ylabel('Amplitude');
+    title('scale ' + string(i));
+end
+
+% Plot a histogram for every frequency scale
+figure(3);
+
+for i = 1:1:num_of_scales
+    subplot(num_of_scales,1,i);
+    hist(mra(i,:),30);
+    title('scale ' + string(i));
+end
+
 % =========================================================
 % 4) 2nd, 3rd and 4th order statistics on all frequency
 % scales
@@ -75,15 +109,13 @@ var = std(mra,0,2);       % second order statistics on all scales
 skw = skewness(mra,0,2);  % third order statistics on all scales
 krt = kurtosis(mra,0,2);  % fourth order statistics on all scales
 
-scales = [128, 64, 32, 16, 8, 4, 2, 1, 0];
-num_of_scales = 8;
-
 for i = 1:1:num_of_scales
+    % frequency boundaries of current scale
     f1 = scales(i+1); f2 = scales(i);
 	
     fprintf("Frequency scale: %dHz-%dHz\n",f1,f2);
     fprintf("variance = %f\n", var(i));
-    fprintf("skewness = %f\n", skw(i));
+	fprintf("skewness = %f\n", skw(i));
     fprintf("kurtosis = %f\n", krt(i));
     fprintf("==========================\n");
     fprintf("\n");
