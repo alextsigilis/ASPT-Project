@@ -75,9 +75,9 @@ sig1 = X{1:30,"EEGF4_M1"};  % first 30 seconds of the F4-M1
 
 % Row Indexing with curly braces and duration()/timerange()
 % ---------------------------------------------------------
-t0 = duration(0,0,0);           % start at t0 = 0sec
-dt = duration(0,0,30);          % move 30 seconds forward
-interval  = range(t0,t0+dt);    % [0sec, 30sec)  
+t0 = duration(0,0,0);            % start at t0 = 0sec
+dt = duration(0,0,30);           % move 30 seconds forward
+interval  = timerange(t0,t0+dt); % [0sec, 30sec)  
 
 sig2 = X{interval,"EEGF4_M1"};  % first 30 seconds of F4-M1
 
