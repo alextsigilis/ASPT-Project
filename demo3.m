@@ -51,40 +51,76 @@ annot_file = "SN001_sleepscoring.edf";
 % 6:     EOG E1-M2
 % 7:     EOG E2-M2
 % 8:     ECG
-channel = 1;
+channel = 5;
 
 % window lenth for estimating higher order statistics
 w = duration("00:00:30");
 
 % wavelet for MRA
-wavelet = "db5";
+wavelet = "db2";
 
 % number of levels on MRA binary tree
 levels = 6;                          
 
-% Use every frequency scale below 
-% pivot (including pivot) for signal
-% reconstruction 
-pivot = 3;                         
-                                       
+% logical array for reconstruction 
+% -> must be levels+1 elements long,
+%    otherwise the script won't run properly
+% -> frequency boundaries are calculated
+%    assuming a sampling rate of 256Hz
+levelForReconstruction = [
+    false,  ...     % scale 1 (64-128 Hz)
+    false,  ...     % scale 2 (32-64 Hz)  
+    true,   ...     % scale 3 (16-32 Hz)
+    true,   ...     % scale 4 (8-16 Hz)
+    true,   ...     % scale 5 (4-8 Hz)
+    true,   ...     % scale 6 (2-4 Hz)
+    true,   ...     % scale 7 (0-2 Hz)
+];                   
+                                     
+% array of valid sleep stages
+% (you should probably leave this 
+% as it is, unless you want to add
+% new sleep stages)
+stages = categorical(   ...
+    ["Sleep stage W",   ...
+     "Sleep stage N1",  ...
+     "Sleep stage N2",  ...
+     "Sleep stage N3",  ...
+     "Sleep stage R"]   ...
+);
+
 % ------------------------------------------------------
 % Do not change anything below that point, 
 % unless you know exactly what you are doing.
 % ------------------------------------------------------
 
 % number of frequency scales
-num_of_scales = levels + 1;                
+num_of_scales = levels + 1;            
+
+% validity checks on selected frequency scales
+if length(levelForReconstruction) ~= num_of_scales
+    fprintf('Error:\n');
+    fprintf('Invalid Selection of Frequency Scales\n');
+end
+
+if all(levelForReconstruction == false)
+    fprintf('Warning:\n');
+    fprintf('Select at least one frequency scale\n');
+end
 
 % ======================================================
 % 2) Read data from the EDF file
 % ======================================================
 
+% Progress Status
 fprintf("Loading input file ...  ");
 
-% Read the entire EDF file and
-% choose the appropriate channel
+% Read the entire EDF file
 X = edfread(input_file);
+
+% choose the appropriate channel
 sig = X{:,channel};
+sig = cell2mat(sig);     
 
 % Read the annotations from the 
 % sleep scoring EDF file
@@ -104,24 +140,33 @@ fs = n / d;
 
 % construct a time axis for
 % the EEG/EOG/ECG channel
-time = linspace(0, N*d, N*d*fs);
+time = linspace(0, N*d, N*d*fs);  
 
-% cell-array -> 1D array
-sig = cell2mat(sig);       
+% Remove Unnecessary Columns and Rows from Annotations
+labels = removevars(labels, "Duration");
+rows = ~ismember(categorical(labels.Annotations), categorical(stages)); 
+labels(rows,:) = [];
+
+% Join the timetable of the EEG/EOG/ECG recordings
+% with the timetable of the sleep labels
+X = synchronize(X, labels, X.("Record Time"), "previous");
+labels = X.("Annotations");
+labels = categorical(labels);
+labels = reordercats(labels, cellstr(stages));
+labels = renamecats(labels,cellstr(stages),["W" "N1" "N2" "N3" "R"]);
 
 % delete unused variables
-% clear X;
+clear X;
 
+% Progress Status
 fprintf("Done\n\n");
 
 % ======================================================
 % 3) Perform MRA decomposition and reconstruction
 % ======================================================
 
-fprintf("Performing MRA ... ");
-
-% Logical array for selecting reconstruction scales
-levelForReconstruction = (1:1:num_of_scales) >= pivot;
+% Progress Status
+fprintf("Performing MRA ... "); tic;
 
 % Perform the decomposition using modwt
 wt = modwt(sig,wavelet,levels);
@@ -135,7 +180,8 @@ sig1 = sum(mra(levelForReconstruction,:),1);
 % Delete unused variables
 clear wt;  
 
-fprintf("Done\n\n");
+% Progress Status
+fprintf("Done\n\n"); toc;
 
 % ======================================================
 % 4) Plot of Original vs Reconstructed Waveform
@@ -172,18 +218,23 @@ freq = [freq 0];
 
 % Plots of selected frequency scales
 % and sliding window statistics
-for i = pivot:1:num_of_scales
-    figure(i); t = tiledlayout(4,1);
+for i = 1:1:num_of_scales
+    % ignore discarded frequency scales
+    if levelForReconstruction(i) == false
+        continue;
+    end
+
+    % Progress Status
+    fprintf("Estimating statistics for scale %d ... ", i);
     
     % f1: lower bound of frequency scale in Hertz
     % f2: upper bound of frequency scale in Hertz
     f1 = freq(i+1);
     f2 = freq(i+0);
 
+    % estimate higher order moments
     x = mra(i,1:K*l);
     x = reshape(x, K, l);
-
-    % estimate higher order moments
     m   = sum(x,2) / l;            % sliding average 
     var = sum((x-m).^2, 2) / l;    % sliding variance
     std = sqrt(var);               % sliding standard deviation
@@ -192,11 +243,30 @@ for i = pivot:1:num_of_scales
     skw = skw ./ (std.^3);         % sliding skewness
     krt = krt ./ (std.^4);         % sliding kurtosis
 
-    % upsample to match the length of the 
-    % current frequency scale
+    % Scatter plot of high order statistics
+    figure(2*i);
+    plot3(std, skw, krt); grid on;
+    xlabel('Standard Deviation');
+    ylabel('Skewness');
+    zlabel('Kurtosis');
+    title(sprintf('Scatter Plot: %fHz - %fHz', f1, f2));
+
+    % Plots of higher order statistics
+    % with respect to time
+    figure(2*i+1); t = tiledlayout(5,1);
+
+    % upsample to match the length
+    % of the frequency scale
     std = interp1(1:1:K, std, (1:1:K*l)/l);
     skw = interp1(1:1:K, skw, (1:1:K*l)/l);
     krt = interp1(1:1:K, krt, (1:1:K*l)/l);
+
+    % subplot of histogram
+    x0 = nexttile;
+    plot(labels);
+    xlabel('time in seconds');
+    ylabel('Sleep stage');
+    title('Hypnogram');
 
     % subplot of current frequency scale
     x1 = nexttile;
@@ -225,4 +295,7 @@ for i = pivot:1:num_of_scales
 
     % Link time axes
     linkaxes([x1 x2 x3 x4], 'x');
+
+    % Progress Status
+    fprintf("Done\n\n");
 end
