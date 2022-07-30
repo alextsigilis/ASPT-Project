@@ -53,19 +53,19 @@ annot_file = "SN001_sleepscoring.edf";
 % 8:     ECG
 channel = 1;
 
-% window lenth when estimating higher order statistics
-w = duration("00:00:01");
+% window lenth for estimating higher order statistics
+w = duration("00:00:30");
 
 % wavelet for MRA
 wavelet = "db5";
 
 % number of levels on MRA binary tree
-levels = 7;                          
+levels = 6;                          
 
 % Use every frequency scale below 
 % pivot (including pivot) for signal
 % reconstruction 
-pivot = 5;                         
+pivot = 3;                         
                                        
 % ------------------------------------------------------
 % Do not change anything below that point, 
@@ -147,6 +147,8 @@ figure(1);
 plt = plot(time,sig, time,sig1);
 plt(1).LineWidth = 0.5; 
 plt(2).LineWidth = 2.0;
+
+legend('Original Signal', 'Reconstructed Signal');
 
 xlabel("time in seconds");
 ylabel("Amplitude in microVolts");
