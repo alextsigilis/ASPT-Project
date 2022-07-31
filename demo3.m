@@ -51,9 +51,10 @@ annot_file = "SN001_sleepscoring.edf";
 % 6:     EOG E1-M2
 % 7:     EOG E2-M2
 % 8:     ECG
-channel = 5;
+channel = 1;
 
 % window lenth for estimating higher order statistics
+% (you should probably leave this as it is)
 w = duration("00:00:30");
 
 % wavelet for MRA
@@ -74,14 +75,14 @@ levelForReconstruction = [
     true,   ...     % scale 4 (8-16 Hz)
     true,   ...     % scale 5 (4-8 Hz)
     true,   ...     % scale 6 (2-4 Hz)
-    true,   ...     % scale 7 (0-2 Hz)
+    true    ...     % scale 7 (0-2 Hz)
 ];                   
                                      
 % array of valid sleep stages
 % (you should probably leave this 
 % as it is, unless you want to add
 % new sleep stages)
-stages = categorical(   ...
+stages = cellstr(       ...
     ["Sleep stage W",   ...
      "Sleep stage N1",  ...
      "Sleep stage N2",  ...
@@ -101,11 +102,15 @@ num_of_scales = levels + 1;
 if length(levelForReconstruction) ~= num_of_scales
     fprintf('Error:\n');
     fprintf('Invalid Selection of Frequency Scales\n');
+    fprintf('Abort ...\n');
+    return;
 end
 
 if all(levelForReconstruction == false)
-    fprintf('Warning:\n');
+    fprintf('Error:\n');
     fprintf('Select at least one frequency scale\n');
+    fprintf('Abort ...\n');
+    return;
 end
 
 % ======================================================
@@ -113,7 +118,7 @@ end
 % ======================================================
 
 % Progress Status
-fprintf("Loading input file ...  ");
+fprintf("Loading input file ...  "); tic;
 
 % Read the entire EDF file
 X = edfread(input_file);
@@ -149,17 +154,17 @@ labels(rows,:) = [];
 
 % Join the timetable of the EEG/EOG/ECG recordings
 % with the timetable of the sleep labels
-X = synchronize(X, labels, X.("Record Time"), "previous");
-labels = X.("Annotations");
+Y = synchronize(X, labels, X.("Record Time"), "previous");
+labels = Y.("Annotations");
 labels = categorical(labels);
-labels = reordercats(labels, cellstr(stages));
-labels = renamecats(labels,cellstr(stages),["W" "N1" "N2" "N3" "R"]);
+labels = reordercats(labels, stages);
+labels = renamecats(labels, stages, ["W" "N1" "N2" "N3" "R"]);
 
 % delete unused variables
-clear X;
+clear X Y;
 
 % Progress Status
-fprintf("Done\n\n");
+fprintf("Done\n\n"); toc; fprintf("\n");
 
 % ======================================================
 % 3) Perform MRA decomposition and reconstruction
@@ -181,7 +186,7 @@ sig1 = sum(mra(levelForReconstruction,:),1);
 clear wt;  
 
 % Progress Status
-fprintf("Done\n\n"); toc;
+fprintf("Done\n\n"); toc; fprintf("\n"); 
 
 % ======================================================
 % 4) Plot of Original vs Reconstructed Waveform
@@ -210,7 +215,7 @@ w = seconds(w);
 l = w * fs;
 
 % number of segments created by sliding window
-K = N * d * fs / l;
+K = N * d * fs / l; K = floor(K);
 
 % frequency boundaries for every analysis scale
 freq = (fs/2) * 2.^-[0:levels];
@@ -249,7 +254,7 @@ for i = 1:1:num_of_scales
     xlabel('Standard Deviation');
     ylabel('Skewness');
     zlabel('Kurtosis');
-    title(sprintf('Scatter Plot: %fHz - %fHz', f1, f2));
+    title(sprintf('Scatter Plot: %.2fHz - %.2fHz', f1, f2));
 
     % Plots of higher order statistics
     % with respect to time
