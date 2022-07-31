@@ -16,15 +16,14 @@
 % 
 % 3) Estimate 2nd, 3rd and 4th order moments
 % for every frequency scale independently. 
-% Use a small time window of 1-3 seconds, when 
+% Use a time window of 30 seconds, when 
 % estimating variance, skewness and kurtosis in 
 % order to obtain localised estimates of the above
 % quantities.
 % 
 % 4) See if there is any correlation between 
-% variance/kurtosis/skewness and transitional phenomena
-% (K-complex, arousal periods) on the reconstructed EEG
-% by visual inspection of the waveforms.
+% variance/kurtosis/skewness and the sleep stage
+% by visual inspection of the waveforms
 % ======================================================
 
 % reset your workspace and clear terminal
@@ -36,10 +35,10 @@ clear all; close all; clc;
 % ======================================================
 
 % name of input file
-input_file = "SN001.edf";            
+input_file = "SN002.edf";            
 
 % name of annotations file
-annot_file = "SN001_sleepscoring.edf";
+annot_file = "SN002_sleepscoring.edf";
 
 % index of selected channel
 % index: signal label
@@ -52,10 +51,6 @@ annot_file = "SN001_sleepscoring.edf";
 % 7:     EOG E2-M2
 % 8:     ECG
 channel = 1;
-
-% window lenth for estimating higher order statistics
-% (you should probably leave this as it is)
-w = duration("00:00:30");
 
 % wavelet for MRA
 wavelet = "db2";
@@ -95,6 +90,9 @@ stages = cellstr(       ...
 % unless you know exactly what you are doing.
 % ------------------------------------------------------
 
+% window lenth for estimating higher order statistics
+w = duration("00:00:30");
+
 % number of frequency scales
 num_of_scales = levels + 1;            
 
@@ -123,16 +121,15 @@ fprintf("Loading input file ...  "); tic;
 % Read the entire EDF file
 X = edfread(input_file);
 
+% Read file metadata
+info = edfinfo(input_file);
+
 % choose the appropriate channel
-sig = X{:,channel};
-sig = cell2mat(sig);     
+sig = X{:,channel}; sig = cell2mat(sig);     
 
 % Read the annotations from the 
 % sleep scoring EDF file
 [~,labels] = edfread(annot_file);
-
-% Read file metadata
-info = edfinfo(input_file);
 
 % N:  number of data records per recording
 % d:  duration of every data record in seconds
@@ -143,25 +140,23 @@ d = seconds(info.DataRecordDuration);
 n = info.NumSamples(channel);
 fs = n / d;
 
-% construct a time axis for
-% the EEG/EOG/ECG channel
-time = linspace(0, N*d, N*d*fs);  
-
-% Remove Unnecessary Columns and Rows from Annotations
+% Extract the sequence of the sleep stages
+% from the Annotations timetable and remove
+% unnecessary events regarding changes in
+% the light level
 labels = removevars(labels, "Duration");
 rows = ~ismember(categorical(labels.Annotations), categorical(stages)); 
 labels(rows,:) = [];
-
-% Join the timetable of the EEG/EOG/ECG recordings
-% with the timetable of the sleep labels
-Y = synchronize(X, labels, X.("Record Time"), "previous");
-labels = Y.("Annotations");
-labels = categorical(labels);
-labels = reordercats(labels, stages);
-labels = renamecats(labels, stages, ["W" "N1" "N2" "N3" "R"]);
+labels.Annotations = categorical(labels.Annotations);
+labels.Annotations = reordercats(labels.Annotations, stages);
+labels.Annotations = renamecats( ...
+    labels.Annotations,          ...
+    stages,                      ...
+    ["W" "N1" "N2" "N3" "R"]     ...
+);
 
 % delete unused variables
-clear X Y;
+clear X;
 
 % Progress Status
 fprintf("Done\n\n"); toc; fprintf("\n");
@@ -193,14 +188,19 @@ fprintf("Done\n\n"); toc; fprintf("\n");
 % ======================================================            
 
 % Reconstructed vs Original Signal
-figure(1); 
+figure(1);
 
-plt = plot(time,sig, time,sig1);
+% construct a time axis for
+% the EEG/EOG/ECG channel
+time = linspace(0, N*d, N*d*fs); 
+
+% Plot settings
+plt = plot(time,sig,time,sig1);
 plt(1).LineWidth = 0.5; 
 plt(2).LineWidth = 2.0;
 
+% Plot axes and title
 legend('Original Signal', 'Reconstructed Signal');
-
 xlabel("time in seconds");
 ylabel("Amplitude in microVolts");
 title("Original vs Reconstruction");
@@ -215,7 +215,10 @@ w = seconds(w);
 l = w * fs;
 
 % number of segments created by sliding window
-K = N * d * fs / l; K = floor(K);
+[K, ~] = size(labels);
+
+% time axis for the following plots
+time = (0:1:(K-1)) * w;
 
 % frequency boundaries for every analysis scale
 freq = (fs/2) * 2.^-[0:levels];
@@ -238,7 +241,7 @@ for i = 1:1:num_of_scales
     f2 = freq(i+0);
 
     % estimate higher order moments
-    x = mra(i,1:K*l);
+    x = mra(i,1:K*w*fs);
     x = reshape(x, K, l);
     m   = sum(x,2) / l;            % sliding average 
     var = sum((x-m).^2, 2) / l;    % sliding variance
@@ -258,48 +261,36 @@ for i = 1:1:num_of_scales
 
     % Plots of higher order statistics
     % with respect to time
-    figure(2*i+1); t = tiledlayout(5,1);
+    figure(2*i+1); t = tiledlayout(4,1);
 
-    % upsample to match the length
-    % of the frequency scale
-    std = interp1(1:1:K, std, (1:1:K*l)/l);
-    skw = interp1(1:1:K, skw, (1:1:K*l)/l);
-    krt = interp1(1:1:K, krt, (1:1:K*l)/l);
-
-    % subplot of histogram
+    % subplot of hypnogram
     x0 = nexttile;
-    plot(labels);
+    plot(x0, time, labels.Annotations);
     xlabel('time in seconds');
     ylabel('Sleep stage');
     title('Hypnogram');
 
-    % subplot of current frequency scale
-    x1 = nexttile;
-    plot(x1, time(1:K*l), mra(i,1:K*l));
-    xlabel('time in seconds'); 
-    ylabel(sprintf('Scale %d', i));
-    title(sprintf('%.2fHz-%.2fHz', f1, f2));
-    
     % subplot of sliding variance
-    x2 = nexttile;
-    plot(x2, time(1:K*l), std);
+    x1 = nexttile;
+    plot(x1, time, std);
     xlabel('time in seconds');
     ylabel('Std. Deviation');
+    title(sprintf("Scale %d: %.2fHz-%.2fHz",i,f1,f2));
 
     % subplot of sliding skewness
-    x3 = nexttile;             
-    plot(x3, time(1:K*l), skw);
+    x2 = nexttile;             
+    plot(x2, time, skw);
     xlabel('time in seconds');
     ylabel('Skewness');
 
     % subplot of sliding kurtosis
-    x4 = nexttile;                     
-    plot(x4, time(1:K*l), krt); 
+    x3 = nexttile;                     
+    plot(x3, time, krt); 
     xlabel('time in seconds');
     ylabel('Kurtosis');
 
     % Link time axes
-    linkaxes([x1 x2 x3 x4], 'x');
+    linkaxes([x0 x1 x2 x3], 'x');
 
     % Progress Status
     fprintf("Done\n\n");
