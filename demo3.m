@@ -21,9 +21,23 @@
 % order to obtain localised estimates of the above
 % quantities.
 % 
-% 4) See if there is any correlation between 
-% variance/kurtosis/skewness and the sleep stage
-% by visual inspection of the waveforms
+% 4) Plot the standard deviation, skewness and 
+% kurtosis of every scale with respect to time
+% and compare those quantities with the hypnogram
+% of the patient.
+%
+% 5) For every 30-second interval plot the standard
+% deviation, skewness and kurtosis of the current
+% % frequency scale as a point in 3D space. 
+% Connect those points to form a curved line.
+% This line should form a closed trajectory in 3D
+% % space since the beginning and the ending of every
+% recording corresponds to the patient being awake.
+%
+% 6) Repeat the previous step, only this time use a
+% different color for every 3D point depending on 
+% the sleep stage. See if those points form any 
+% distinct color clusters in 3D space.
 % ======================================================
 
 % reset your workspace and clear terminal
@@ -35,10 +49,10 @@ clear all; close all; clc;
 % ======================================================
 
 % name of input file
-input_file = "SN002.edf";            
+input_file = "SN001.edf";            
 
 % name of annotations file
-annot_file = "SN002_sleepscoring.edf";
+annot_file = "SN001_sleepscoring.edf";
 
 % index of selected channel
 % index: signal label
@@ -53,14 +67,9 @@ annot_file = "SN002_sleepscoring.edf";
 channel = 1;
 
 % wavelet for MRA
-wavelet = "db2";
-
-% number of levels on MRA binary tree
-levels = 6;                          
+wavelet = "db2";                    
 
 % logical array for reconstruction 
-% -> must be levels+1 elements long,
-%    otherwise the script won't run properly
 % -> frequency boundaries are calculated
 %    assuming a sampling rate of 256Hz
 levelForReconstruction = [
@@ -71,19 +80,7 @@ levelForReconstruction = [
     true,   ...     % scale 5 (4-8 Hz)
     true,   ...     % scale 6 (2-4 Hz)
     true    ...     % scale 7 (0-2 Hz)
-];                   
-                                     
-% array of valid sleep stages
-% (you should probably leave this 
-% as it is, unless you want to add
-% new sleep stages)
-stages = cellstr(       ...
-    ["Sleep stage W",   ...
-     "Sleep stage N1",  ...
-     "Sleep stage N2",  ...
-     "Sleep stage N3",  ...
-     "Sleep stage R"]   ...
-);
+];
 
 % ------------------------------------------------------
 % Do not change anything below that point, 
@@ -94,12 +91,15 @@ stages = cellstr(       ...
 w = duration("00:00:30");
 
 % number of frequency scales
-num_of_scales = levels + 1;            
+num_of_scales = length(levelForReconstruction);
+
+% number of levels on MRA binary tree
+levels = num_of_scales - 1;
 
 % validity checks on selected frequency scales
-if length(levelForReconstruction) ~= num_of_scales
-    fprintf('Error:\n');
-    fprintf('Invalid Selection of Frequency Scales\n');
+if levels < 1
+    fprintf('Error ...\n');
+    fprintf('MRA requires at least one decomposition level\n');
     fprintf('Abort ...\n');
     return;
 end
@@ -144,6 +144,17 @@ fs = n / d;
 % from the Annotations timetable and remove
 % unnecessary events regarding changes in
 % the light level
+% array of valid sleep stages
+% (you should probably leave
+% this as it is)
+stages = cellstr(       ...
+    ["Sleep stage W",   ...
+     "Sleep stage N1",  ...
+     "Sleep stage N2",  ...
+     "Sleep stage N3",  ...
+     "Sleep stage R"]   ...
+);
+
 labels = removevars(labels, "Duration");
 rows = ~ismember(categorical(labels.Annotations), categorical(stages)); 
 labels(rows,:) = [];
@@ -152,8 +163,10 @@ labels.Annotations = reordercats(labels.Annotations, stages);
 labels.Annotations = renamecats( ...
     labels.Annotations,          ...
     stages,                      ...
-    ["W" "N1" "N2" "N3" "R"]     ...
+    ["W" "N1" "N2" "N3" "R"]     ...  
 );
+
+stages = cellstr(["W" "N1" "N2" "N3" "R"]);
 
 % delete unused variables
 clear X;
@@ -187,8 +200,11 @@ fprintf("Done\n\n"); toc; fprintf("\n");
 % 4) Plot of Original vs Reconstructed Waveform
 % ======================================================            
 
+% incremental index for the number of plots
+idx = 1;
+
 % Reconstructed vs Original Signal
-figure(1);
+figure(idx); idx = idx + 1;
 
 % construct a time axis for
 % the EEG/EOG/ECG channel
@@ -206,7 +222,7 @@ ylabel("Amplitude in microVolts");
 title("Original vs Reconstruction");
 
 % ======================================================
-% Estimate variance/skewness/kurtosis
+% 5) Estimate variance/skewness/kurtosis
 % in a sliding window.
 % ======================================================
 
@@ -251,8 +267,8 @@ for i = 1:1:num_of_scales
     skw = skw ./ (std.^3);         % sliding skewness
     krt = krt ./ (std.^4);         % sliding kurtosis
 
-    % Scatter plot of high order statistics
-    figure(2*i);
+    % 3D space plot of high order statistics
+    figure(idx); idx = idx + 1;
     plot3(std, skw, krt); grid on;
     xlabel('Standard Deviation');
     ylabel('Skewness');
@@ -261,7 +277,8 @@ for i = 1:1:num_of_scales
 
     % Plots of higher order statistics
     % with respect to time
-    figure(2*i+1); t = tiledlayout(4,1);
+    figure(idx); idx = idx + 1; 
+    t = tiledlayout(4,1);
 
     % subplot of hypnogram
     x0 = nexttile;
@@ -291,6 +308,28 @@ for i = 1:1:num_of_scales
 
     % Link time axes
     linkaxes([x0 x1 x2 x3], 'x');
+
+    % scatter plot of higher order statistics
+    figure(idx); idx = idx + 1; hold on; grid on;
+    xlabel('Standard Deviation');
+    ylabel('Skewness');
+    zlabel('Kurtosis');
+    title(sprintf('Scatterplot, %.2fHz-%.2fHz',f1,f2));
+
+    colors = ['r', 'g', 'g', 'g', 'b'];
+
+    for j = 1:1:length(stages)
+        scatter3(                                 ...
+            std(labels.Annotations == stages(j)), ...
+            skw(labels.Annotations == stages(j)), ...
+            krt(labels.Annotations == stages(j)), ...
+            10,                                   ...
+            colors(j),                            ...
+            'filled'                              ...
+        );
+    end
+
+    legend(stages);
 
     % Progress Status
     fprintf("Done\n\n");
