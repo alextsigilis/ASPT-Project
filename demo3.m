@@ -25,19 +25,6 @@
 % kurtosis of every scale with respect to time
 % and compare those quantities with the hypnogram
 % of the patient.
-%
-% 5) For every 30-second interval plot the standard
-% deviation, skewness and kurtosis of the current
-% % frequency scale as a point in 3D space. 
-% Connect those points to form a curved line.
-% This line should form a closed trajectory in 3D
-% % space since the beginning and the ending of every
-% recording corresponds to the patient being awake.
-%
-% 6) Repeat the previous step, only this time use a
-% different color for every 3D point depending on 
-% the sleep stage. See if those points form any 
-% distinct color clusters in 3D space.
 % ======================================================
 
 % reset your workspace and clear terminal
@@ -67,19 +54,18 @@ annot_file = "SN001_sleepscoring.edf";
 channel = 1;
 
 % wavelet for MRA
-wavelet = "db2";                    
+wavelet = "db5";                    
 
 % logical array for reconstruction 
 % -> frequency boundaries are calculated
 %    assuming a sampling rate of 256Hz
 levelForReconstruction = [
-    false,  ...     % scale 1 (64-128 Hz)
-    false,  ...     % scale 2 (32-64 Hz)  
-    true,   ...     % scale 3 (16-32 Hz)
-    true,   ...     % scale 4 (8-16 Hz)
-    true,   ...     % scale 5 (4-8 Hz)
-    true,   ...     % scale 6 (2-4 Hz)
-    true    ...     % scale 7 (0-2 Hz)
+    false, ...     % 64 - 128
+    false, ...     % 32 - 64
+    true,  ...     % 16 - 32
+    true,  ...     % 8 - 16
+    true,  ...     % 4 - 8
+    true   ...     % 0 - 4
 ];
 
 % ------------------------------------------------------
@@ -221,116 +207,38 @@ xlabel("time in seconds");
 ylabel("Amplitude in microVolts");
 title("Original vs Reconstruction");
 
-% ======================================================
-% 5) Estimate variance/skewness/kurtosis
-% in a sliding window.
-% ======================================================
+% =========================================================
+% 5) Plots of Delta, Theta, Alpha and Beta waves
+% =========================================================
 
-% length of sliding window in samples
-w = seconds(w);
-l = w * fs;
+figure(idx); tiledlayout(4,1); idx = idx + 1;
 
-% number of segments created by sliding window
-[K, ~] = size(labels);
+% Delta waves
+ax(1) = nexttile;
+plot(time, mra(6,:));
+xlabel('time in seconds');
+ylabel('Amplitude');
+title('Delta waves');
 
-% time axis for the following plots
-time = (0:1:(K-1)) * w;
+% Theta waves
+ax(2) = nexttile;
+plot(time, mra(5,:));
+xlabel('time in seconds');
+ylabel('Amplitude');
+title('Theta waves');
 
-% frequency boundaries for every analysis scale
-freq = (fs/2) * 2.^-[0:levels];
-freq = [freq 0];
+% Alpha waves
+ax(3) = nexttile;
+plot(time, mra(4,:));
+xlabel('time in seconds');
+ylabel('Amplitude');
+title('Alpha waves');
 
-% Plots of selected frequency scales
-% and sliding window statistics
-for i = 1:1:num_of_scales
-    % ignore discarded frequency scales
-    if levelForReconstruction(i) == false
-        continue;
-    end
+% Beta waves
+ax(4) = nexttile; 
+plot(time, mra(3,:));
+xlabel('time in seconds');
+ylabel('Amplitude');
+title('Beta waves');
 
-    % Progress Status
-    fprintf("Estimating statistics for scale %d ... ", i);
-    
-    % f1: lower bound of frequency scale in Hertz
-    % f2: upper bound of frequency scale in Hertz
-    f1 = freq(i+1);
-    f2 = freq(i+0);
-
-    % estimate higher order moments
-    x = mra(i,1:K*w*fs);
-    x = reshape(x, K, l);
-    m   = sum(x,2) / l;            % sliding average 
-    var = sum((x-m).^2, 2) / l;    % sliding variance
-    std = sqrt(var);               % sliding standard deviation
-    skw = sum((x-m).^3, 2) / l;    % sliding 3rd moment
-    krt = sum((x-m).^4, 2) / l;    % sliding 4th moment
-    skw = skw ./ (std.^3);         % sliding skewness
-    krt = krt ./ (std.^4);         % sliding kurtosis
-
-    % 3D space plot of high order statistics
-    figure(idx); idx = idx + 1;
-    plot3(std, skw, krt); grid on;
-    xlabel('Standard Deviation');
-    ylabel('Skewness');
-    zlabel('Kurtosis');
-    title(sprintf('Scatter Plot: %.2fHz - %.2fHz', f1, f2));
-
-    % Plots of higher order statistics
-    % with respect to time
-    figure(idx); idx = idx + 1; 
-    t = tiledlayout(4,1);
-
-    % subplot of hypnogram
-    x0 = nexttile;
-    plot(x0, time, labels.Annotations);
-    xlabel('time in seconds');
-    ylabel('Sleep stage');
-    title('Hypnogram');
-
-    % subplot of sliding variance
-    x1 = nexttile;
-    plot(x1, time, std);
-    xlabel('time in seconds');
-    ylabel('Std. Deviation');
-    title(sprintf("Scale %d: %.2fHz-%.2fHz",i,f1,f2));
-
-    % subplot of sliding skewness
-    x2 = nexttile;             
-    plot(x2, time, skw);
-    xlabel('time in seconds');
-    ylabel('Skewness');
-
-    % subplot of sliding kurtosis
-    x3 = nexttile;                     
-    plot(x3, time, krt); 
-    xlabel('time in seconds');
-    ylabel('Kurtosis');
-
-    % Link time axes
-    linkaxes([x0 x1 x2 x3], 'x');
-
-    % scatter plot of higher order statistics
-    figure(idx); idx = idx + 1; hold on; grid on;
-    xlabel('Standard Deviation');
-    ylabel('Skewness');
-    zlabel('Kurtosis');
-    title(sprintf('Scatterplot, %.2fHz-%.2fHz',f1,f2));
-
-    colors = ['r', 'g', 'g', 'g', 'b'];
-
-    for j = 1:1:length(stages)
-        scatter3(                                 ...
-            std(labels.Annotations == stages(j)), ...
-            skw(labels.Annotations == stages(j)), ...
-            krt(labels.Annotations == stages(j)), ...
-            10,                                   ...
-            colors(j),                            ...
-            'filled'                              ...
-        );
-    end
-
-    legend(stages);
-
-    % Progress Status
-    fprintf("Done\n\n");
-end
+linkaxes(ax, 'x');
