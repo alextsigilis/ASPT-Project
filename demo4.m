@@ -4,6 +4,17 @@
 % --------------------------------------------------------------------
 %
 % Objectives:
+% 1) Choose a number of patients from the original dataset and an
+% EEG channel
+%
+% 2) Decompose the EEG recordings of those patients into different 
+% frequency scales by applying the Discrete Wavelet Transform
+%
+% 3) Estimate the variance, skewness and (excess) kurtosis of the
+% DWT coefficients for every frequency scale
+%
+% 4) Use 3D scatterplots to visualize the distributions of those
+% quantities
 %
 % ====================================================================
 
