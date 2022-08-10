@@ -1,165 +1,176 @@
-% =======================================================
+% ====================================================================
 % Author: Christodoulos Michaelides
 % Date: August 5th, 2022
-% -------------------------------------------------------
+% --------------------------------------------------------------------
 %
 % Objectives:
-% 1) Choose one out of the 4 EEG channels.
 %
-% 2) Split the recording of the EEG into 30sec segments.
-%
-% 3) Use Multi Resolution Analysis to decompose every 
-% segment into delta, theta, alpha and beta waves.
-%
-% 4) Estimate the variance, skewness and kurtosis 
-%    of each wave-type for every 30sec segment.
-%
-% 5) Plot the estimates with scatter plots. 
-%
-% 6) Use different colors to represent each sleep stage
-%
-% 7) Repeat the same process for 10-20 patients in the
-% original dataset
-%
-% 8) See if there are any high-density clusters in those
-% scatter plots. (Spoiler: There are)
-% =======================================================
+% ====================================================================
 
-clear all; close all; clc; % Reset your workspace
+% ====================================================================
+% 0) Reset your Workspace
+% ====================================================================
+clear all; close all; clc;
 
-channel = 1;               % EEG channel to analyse
-num_of_patients = 25;      % number of patients 
+% ====================================================================
+% 1) Script parameters (Choose any value you want to experiment with)
+% ====================================================================
 
-% -------------------------------------------------------
-% Do not change anything below that point
-% -------------------------------------------------------
+% n1: (integer 1-154) ID of first patient 
+% n2: (integer 1-154) ID of last patient
+% channel: (integer 1-4) ID of EEG channel 
+% sz: (float) marker size for scatter plots
+n1 = 1; n2 = 20;
+channel = 1;
+sz = 0.35;
 
-sz = 0.25; % size of observations on scatter plots
+% --------------------------------------------------------------------
+% Do not change anything below that point, unless you know what you 
+% you are doing.
+% --------------------------------------------------------------------
 
-% List of valid sleep stages
-stages = [
-    "Sleep stage W",  ... 
-    "Sleep stage N1", ...
-    "Sleep stage N2", ...
-    "Sleep stage N3", ...
-    "Sleep stage R"];
+% names: (array) array of column names for table X
+% types: (array) array of datatypes for every colunn of X
+names = {'var'     'skw'     'krt'     'Annotations'};
+types = {'double'  'double'  'double'  'string'};
 
-num_of_stages = length(stages);
+delta = table('Size', [0 4], 'VariableTypes', types, 'VariableNames', names);
+theta = table('Size', [0 4], 'VariableTypes', types, 'VariableNames', names);
+alpha = table('Size', [0 4], 'VariableTypes', types, 'VariableNames', names);
+beta  = table('Size', [0 4], 'VariableTypes', types, 'VariableNames', names);
 
-% an incremental index for every plot
-idx = 1;
+% ====================================================================
+% 2) Decompose the input signals by using DWT. Extract statistical 
+%    features such as the standard deviation, skewness and kurtosis
+%    of the DWT coefficients for every frequency scale.
+% ====================================================================
 
-% Initialize all scatter plots
-% (axes titles, legends etc ...)
-for i = 1:num_of_stages
-    for j = (i+1):num_of_stages
-        % delta waves
-        figure(idx); hold on; grid on;
-        title(sprintf("Delta waves: %s vs %s", stages(i), stages(j)));
-        xlabel('variance'); ylabel('skewness'); zlabel('kurtosis');
-        idx = idx + 1;
-
-        % theta waves 
-        figure(idx); hold on; grid on;
-        title(sprintf("Theta waves: %s vs %s", stages(i), stages(j)));
-        xlabel('variance'); ylabel('skewness'); zlabel('kurtosis');
-        idx = idx + 1;
-
-        % alpha waves
-        figure(idx); hold on; grid on;
-        title(sprintf('Alpha waves: %s vs %s', stages(i), stages(j)));
-        xlabel('variance'); ylabel('skewness'); zlabel('kurtosis');
-        idx = idx + 1;
-
-        % beta waves
-        figure(idx); hold on; grid on;
-        title(sprintf('Beta waves: %s vs %s', stages(i), stages(j)));
-        xlabel('variance'); ylabel('skewness'); zlabel('kurtosis');
-        idx = idx + 1;
-    end
-end
-
-for n = 1:1:num_of_patients
+for i = n1:1:n2
     % Progress status
-    fprintf('Processing file %d out of %d\n\n', n, num_of_patients);
+    fprintf("Processing patient %d ...\n",i);
 
-    % Make sure that the input files exist
-    if ~isfile(sprintf("SN%03d.edf",n))
+    % Make sure the input file exists
+    % before attempting to open it
+    if ~isfile(sprintf("SN%03d.edf",i))
+        fprintf("Patient %d does not exist\n\n",i);
         continue;
     end
 
-    % Load recordings from EDF files
-    Z = loadEDF(n);
-
-    % Decompose the EEG to delta, theta, alpha and beta waves
-    % and estimate 2nd, 3rd and 4th order statistics for every scale
-    [delta, theta, alpha, beta] = mraEEG(Z,channel);
-
-    % An incremental index for every scatter plot
-    idx = 1;
+    % a) Load the EEG recordings and sleep stage labels
+    % b) Estimate DWT coefficients for every frequency scale
+    % c) Extract features such as std, skewness and kurtosis
+    %    from the DWT coefficients
+    % d) save the results and move on to the next patient
     
-    % Update all scatter plots with new data
-    for i = 1:num_of_stages
-        for j = (i+1):num_of_stages
-            % scatter plot for delta waves
-            figure(idx);
-            s = Z.Annotations == stages(i);
-            scatter3(delta.var(s), delta.skw(s), delta.krt(s), sz, 'r');
-            s = Z.Annotations == stages(j);
-            scatter3(delta.var(s), delta.skw(s), delta.krt(s), sz, 'g');
-            idx = idx + 1;
+    fprintf("Loading EEG recordings from disk ...");
+    Z = loadEDF(i);
+    fprintf("Done\n");
 
-            % scatter plot for theta waves
-            figure(idx);
-            s = Z.Annotations == stages(i);
-            scatter3(theta.var(s), theta.skw(s), theta.krt(s), sz, 'r');
-            s = Z.Annotations == stages(j);
-            scatter3(theta.var(s), theta.skw(s), theta.krt(s), sz, 'g');
-            idx = idx + 1;
+    fprintf("Extracting DWT coefficients ...");
+    Z = mraEEG(Z,channel);
+    fprintf("Done\n");
 
-            % scatter plot for alpha waves
-            figure(idx);
-            s = Z.Annotations == stages(i);
-            scatter3(alpha.var(s), alpha.skw(s), alpha.krt(s), sz, 'r');
-            s = Z.Annotations == stages(j);
-            scatter3(alpha.var(s), alpha.skw(s), alpha.krt(s), sz, 'g');
-            idx = idx + 1;
-
-            % scatter plot for beta waves
-            figure(idx);
-            s = Z.Annotations == stages(i);
-            scatter3(beta.var(s), beta.skw(s), beta.krt(s), sz, 'r');
-            s = Z.Annotations == stages(j);
-            scatter3(beta.var(s), beta.skw(s), beta.krt(s), sz, 'g');
-            idx = idx + 1;
-        end
-    end
+    fprintf("Extracting features from DWT coefficients ...");
+    [d, u, a, b] = statEEG(Z);
+    fprintf("Done\n\n");
+    
+    delta = vertcat(delta, d);
+    theta = vertcat(theta, u);
+    alpha = vertcat(alpha, a);
+    beta  = vertcat(beta,  b); 
 end
 
-% incremental index for scatter plots
+% ====================================================================
+% 3) Use 3-dimensional scatter plots to visualize the distributions 
+%    of the extracted features. See if any of the following happen 
+%    by visually inspecting the scatter plots:
+%    a) Formation of high density clusters in 3D space
+%    b) Separation of said clusters based on the sleep stage
+% ====================================================================
+
+% stages: (1D-array) array of valid sleep stage Annotations
+stages = [                  ...
+    "Sleep stage W",        ...
+    "Sleep stage R",        ...
+    "Sleep stage N1",       ...
+    "Sleep stage N2",       ...
+    "Sleep stage N3"];
+
+% Incremental index for scatter plots
 idx = 1;
 
-% add a legend on every scatter plot
-for i = 1:num_of_stages
-    for j = (i+1):num_of_stages
-        % legend for delta waves
-        figure(idx);
+for i = 1:1:numel(stages)
+    for j = (i+1):1:numel(stages)
+        % scatter plot for delta waves
+        figure(idx); idx = idx + 1; hold on; grid on;
+        mask1 = delta.Annotations == stages(i);
+        mask2 = delta.Annotations == stages(j);
+        var1 = delta.var(mask1);
+        var2 = delta.var(mask2);
+        skw1 = delta.skw(mask1);
+        skw2 = delta.skw(mask2);
+        krt1 = delta.krt(mask1);
+        krt2 = delta.krt(mask2);
+        scatter3(var1, skw1, krt1, sz, 'r');
+        scatter3(var2, skw2, krt2, sz, 'g');
+        xlabel('Variance of DWT coefficients');
+        ylabel('Skewness of DWT coefficients');
+        zlabel('Kurtosis of DWT coefficients');
+        title(sprintf("Delta waves %s vs %s", stages(i), stages(j)));
         legend(stages(i), stages(j));
-        idx = idx + 1;
 
-        % legend for theta waves
-        figure(idx);
+        % scatter plot for theta waves
+        figure(idx); idx = idx + 1; hold on; grid on;
+        mask1 = theta.Annotations == stages(i);
+        mask2 = theta.Annotations == stages(j);
+        var1 = theta.var(mask1);
+        var2 = theta.var(mask2);
+        skw1 = theta.skw(mask1);
+        skw2 = theta.skw(mask2);
+        krt1 = theta.krt(mask1);
+        krt2 = theta.krt(mask2);
+        scatter3(var1, skw1, krt1, sz, 'r');
+        scatter3(var2, skw2, krt2, sz, 'g');
+        xlabel('Variance of DWT coefficients');
+        ylabel('Skewness of DWT coefficients');
+        zlabel('Kurtosis of DWT coefficients');
+        title(sprintf("Theta waves %s vs %s", stages(i), stages(j)));
         legend(stages(i), stages(j));
-        idx = idx + 1;
-        
-        % legend for alpha waves
-        figure(idx);
+
+        % scatter plot for alpha waves
+        figure(idx); idx = idx + 1; hold on; grid on;
+        mask1 = alpha.Annotations == stages(i);
+        mask2 = alpha.Annotations == stages(j);
+        var1 = alpha.var(mask1);
+        var2 = alpha.var(mask2);
+        skw1 = alpha.skw(mask1);
+        skw2 = alpha.skw(mask2);
+        krt1 = alpha.krt(mask1);
+        krt2 = alpha.krt(mask2);
+        scatter3(var1, skw1, krt1, sz, 'r');
+        scatter3(var2, skw2, krt2, sz, 'g');
+        xlabel('Variance of DWT coefficients');
+        ylabel('Skewness of DWT coefficients');
+        zlabel('Kurtosis of DWT coefficients');
+        title(sprintf("Alpha waves %s vs %s", stages(i), stages(j)));
         legend(stages(i), stages(j));
-        idx = idx + 1;
-        
-        % legend for beta waves
-        figure(idx);
+
+        % scatter plot for beta  waves
+        figure(idx); idx = idx + 1; hold on; grid on;
+        mask1 = beta.Annotations == stages(i);
+        mask2 = beta.Annotations == stages(j);
+        var1 = beta.var(mask1);
+        var2 = beta.var(mask2);
+        skw1 = beta.skw(mask1);
+        skw2 = beta.skw(mask2);
+        krt1 = beta.krt(mask1);
+        krt2 = beta.krt(mask2);
+        scatter3(var1, skw1, krt1, sz, 'r');
+        scatter3(var2, skw2, krt2, sz, 'g');
+        xlabel('Variance of DWT coefficients');
+        ylabel('Skewness of DWT coefficients');
+        zlabel('Kurtosis of DWT coefficients');
+        title(sprintf("Beta waves %s vs %s", stages(i), stages(j)));
         legend(stages(i), stages(j));
-        idx = idx + 1;
     end
 end
