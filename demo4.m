@@ -4,6 +4,7 @@
 % --------------------------------------------------------------------
 %
 % Objectives:
+%
 % 1) Choose a number of patients from the original dataset and an
 % EEG channel
 %
@@ -31,9 +32,11 @@ clear all; close all; clc;
 % n2: (integer 1-154) ID of last patient
 % channel: (integer 1-4) ID of EEG channel 
 % sz: (float) marker size for scatter plots
+% path: save path for scatter plots
 n1 = 1; n2 = 20;
-channel = 1;
+channel = 4;
 sz = 0.35;
+path = "C:\Users\USER\Desktop\figures4\";
 
 % --------------------------------------------------------------------
 % Do not change anything below that point, unless you know what you 
@@ -113,7 +116,7 @@ idx = 1;
 for i = 1:1:numel(stages)
     for j = (i+1):1:numel(stages)
         % scatter plot for delta waves
-        figure(idx); idx = idx + 1; hold on; grid on;
+        f = figure(idx); hold on; grid on;
         mask1 = delta.Annotations == stages(i);
         mask2 = delta.Annotations == stages(j);
         var1 = delta.var(mask1);
@@ -122,16 +125,18 @@ for i = 1:1:numel(stages)
         skw2 = delta.skw(mask2);
         krt1 = delta.krt(mask1);
         krt2 = delta.krt(mask2);
-        scatter3(var1, skw1, krt1, sz, 'r');
-        scatter3(var2, skw2, krt2, sz, 'g');
+        scatter3(var1, skw1, krt1, sz, [0.0 0.0 1.0]);
+        scatter3(var2, skw2, krt2, sz, [1.0 0.6 0.0]);
         xlabel('Variance of DWT coefficients');
         ylabel('Skewness of DWT coefficients');
         zlabel('Kurtosis of DWT coefficients');
         title(sprintf("Delta waves %s vs %s", stages(i), stages(j)));
         legend(stages(i), stages(j));
+        saveas(f,sprintf("%s%02d.fig",path,idx));
+        idx = idx + 1;
 
         % scatter plot for theta waves
-        figure(idx); idx = idx + 1; hold on; grid on;
+        f = figure(idx); hold on; grid on;
         mask1 = theta.Annotations == stages(i);
         mask2 = theta.Annotations == stages(j);
         var1 = theta.var(mask1);
@@ -140,16 +145,18 @@ for i = 1:1:numel(stages)
         skw2 = theta.skw(mask2);
         krt1 = theta.krt(mask1);
         krt2 = theta.krt(mask2);
-        scatter3(var1, skw1, krt1, sz, 'r');
-        scatter3(var2, skw2, krt2, sz, 'g');
+        scatter3(var1, skw1, krt1, sz, [0.0 0.0 1.0]);
+        scatter3(var2, skw2, krt2, sz, [1.0 0.6 0.0]);
         xlabel('Variance of DWT coefficients');
         ylabel('Skewness of DWT coefficients');
         zlabel('Kurtosis of DWT coefficients');
         title(sprintf("Theta waves %s vs %s", stages(i), stages(j)));
         legend(stages(i), stages(j));
+        saveas(f,sprintf("%s%02d.fig",path,idx));
+        idx = idx + 1;
 
         % scatter plot for alpha waves
-        figure(idx); idx = idx + 1; hold on; grid on;
+        f = figure(idx); hold on; grid on;
         mask1 = alpha.Annotations == stages(i);
         mask2 = alpha.Annotations == stages(j);
         var1 = alpha.var(mask1);
@@ -158,16 +165,18 @@ for i = 1:1:numel(stages)
         skw2 = alpha.skw(mask2);
         krt1 = alpha.krt(mask1);
         krt2 = alpha.krt(mask2);
-        scatter3(var1, skw1, krt1, sz, 'r');
-        scatter3(var2, skw2, krt2, sz, 'g');
+        scatter3(var1, skw1, krt1, sz, [0.0 0.0 1.0]);
+        scatter3(var2, skw2, krt2, sz, [1.0 0.6 0.0]);
         xlabel('Variance of DWT coefficients');
         ylabel('Skewness of DWT coefficients');
         zlabel('Kurtosis of DWT coefficients');
         title(sprintf("Alpha waves %s vs %s", stages(i), stages(j)));
         legend(stages(i), stages(j));
+        saveas(f,sprintf("%s%02d.fig",path,idx));
+        idx = idx + 1;
 
         % scatter plot for beta  waves
-        figure(idx); idx = idx + 1; hold on; grid on;
+        f = figure(idx); hold on; grid on;
         mask1 = beta.Annotations == stages(i);
         mask2 = beta.Annotations == stages(j);
         var1 = beta.var(mask1);
@@ -176,12 +185,14 @@ for i = 1:1:numel(stages)
         skw2 = beta.skw(mask2);
         krt1 = beta.krt(mask1);
         krt2 = beta.krt(mask2);
-        scatter3(var1, skw1, krt1, sz, 'r');
-        scatter3(var2, skw2, krt2, sz, 'g');
+        scatter3(var1, skw1, krt1, sz, [0.0 0.0 1.0]);
+        scatter3(var2, skw2, krt2, sz, [1.0 0.6 0.0]);
         xlabel('Variance of DWT coefficients');
         ylabel('Skewness of DWT coefficients');
         zlabel('Kurtosis of DWT coefficients');
         title(sprintf("Beta waves %s vs %s", stages(i), stages(j)));
         legend(stages(i), stages(j));
+        saveas(f,sprintf("%s%02d.fig",path,idx));
+        idx = idx + 1;
     end
 end
