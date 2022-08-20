@@ -1,4 +1,18 @@
 % ===================================================================
+% Author: Christodoulos Michaelides
+% Date: August 19th, 2022
+% -------------------------------------------------------------------
+%
+% Demo Script 7
+%
+% 1) Choose a patient from the dataset and an EEG channel 
+%
+% 2) Estimate the bispectrum of the EEG in a 30sec window
+%
+% 3) Display all the bispectra as seperate frames in a video 
+% ===================================================================
+
+% ===================================================================
 % 0) Clear your workspace variables
 % ===================================================================
 
