@@ -22,7 +22,7 @@ fc = 4;
 
 % levels: (integer) number of levels for contour plots
 % dt: (integer) playback speed in seconds per frame
-levels = 8;
+levels = 16;
 dt = 1.0;
 
 % ===================================================================
@@ -48,8 +48,8 @@ pause('on');
 N = size(bis,1); 
 
 for i = 1:1:N
-    contourf(freq, freq, abs(cell2mat(bis{i,1})), levels);
-    txt = sprintf("frame %d out of %d: %s", i, N, bis.Annotations{i});
+    contourf(freq,freq,abs(cell2mat(bis{i,1})),levels,'LineColor','none');
+    txt = sprintf("frame %d out of %d: %s",i,N,bis.Annotations{i});
     xlabel("f_1"); ylabel("f_2"); title(txt);
     pause(dt);
 end
