@@ -49,7 +49,7 @@ fs = 256;       % EEG sampling frequency
 fc = 4;         % bispectrum truncation frequency
 
 % Parameters for bispectrum contour plots
-levels = 8;     % Number of contour lines for every plot
+levels = 16;    % Number of contour lines for every plot
 
 % ==================================================================
 % 2) Estimate the bispectrum
@@ -74,21 +74,21 @@ B4 = cell2mat(bis{idx4,1});    % Extract the bispectrum for Sleep stage N3
 B5 = cell2mat(bis{idx5,1});    % Extract the bispectrum for Sleep stage R
 
 figure(1); grid on;
-contourf(freq, freq, abs(B1), levels);
+contourf(freq, freq, abs(B1), levels, 'LineColor', 'none');
 xlabel('f_1'); ylabel('f_2'); title('Sleep stage W');
 
 figure(2); grid on; 
-contourf(freq, freq, abs(B2), levels);
+contourf(freq, freq, abs(B2), levels, 'LineColor', 'none');
 xlabel('f_1'); ylabel('f_2'); title('Sleep stage N1');
 
 figure(3); grid on;
-contourf(freq, freq, abs(B3), levels);
+contourf(freq, freq, abs(B3), levels, 'LineColor', 'none');
 xlabel('f_1'); ylabel('f_2'); title('Sleep stage N2');
 
 figure(4); grid on;
-contourf(freq, freq, abs(B4), levels);
+contourf(freq, freq, abs(B4), levels, 'LineColor', 'none');
 xlabel('f_1'); ylabel('f_2'); title('Sleep stage N3');
 
 figure(5); grid on;
-contourf(freq, freq, abs(B5), levels);
+contourf(freq, freq, abs(B5), levels,'LineColor','none');
 xlabel('f_1'); ylabel('f_2'); title('Sleep stage R');
