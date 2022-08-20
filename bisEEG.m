@@ -63,45 +63,50 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
     % Parameter Checks
     % ---------------------------------------------------------------
 
-    if K  <= 0 error("K must be positive");  end                           
+    if K  <= 0 error("K must be positive "); end                           
     if fs <= 0 error("fs must be positive"); end                           
     if fc <= 0 error("fc must be positive"); end                                       
     if channel < 1 || channel > 4 error("invalid EEG channel"); end        
 
-    nrecs = size(X,1);
-    if nrecs <= 0 error("X is empty"); end 
-    ly = numel(cell2mat(X{1,channel}));
-    if ly <= 0 error("EEG records are empty"); end
+    % N: (integer) number of 30sec EEG recordings
+    N = size(X,1);
+    if N <= 0 error("X is empty"); end 
 
-    nsamp = floor(ly/K);                                                   
-    nfft = nsamp;                                                          
-    nadvance = nsamp;                                                      
+    % L: (integer) number of samples per 30sec recording
+    L = numel(cell2mat(X{1,channel}));
+    if L <= 0 error("EEG records are empty"); end
 
-    if nsamp < 5 error("low frequency resolution"); end
-    if 2*nfft*fc >= (nfft-2)*fs error("Nyquist criterion is violated"); end  
-    if fc * nfft <= fs error("fc is almost zero"); end
+    % M: (integer) number of samples per subset after partitioning
+    M = floor(L/K);                                                                                                                                                            
+    if M < 5 error("low frequency resolution"); end
+    if 2*M*fc >= (M-2)*fs error("Nyquist criterion is violated"); end  
+    if fc * M <= fs error("fc is almost zero"); end
 
     % ---------------------------------------------------------------
     % Construction of frequency domain window function
     % ---------------------------------------------------------------
     
-    winsize = 3;
-    winsize = winsize - rem(winsize,2) + 1;
+    % W: (integer) Size of Rao-Gabr window  (must be an odd number)
+    W = 5;
     
-    mwind = fix(nfft/winsize);
-    lby2  = (winsize - 1)/2;
-    theta = -lby2:lby2;
+    % temporary variables for constructing the Rao-Gabr window
+    Q = fix(M/W);
+    u = (-(W-1)/2):(+(W-1)/2);
     
-    opwind = ones(winsize,1) * (theta .^2);
-    opwind = opwind + opwind' + theta' * theta;
-    opwind = 1 - (2*mwind/nfft)^2 * opwind;
+    % opwind: Rao-Gabr window for frequency domain smoothing
+    opwind = ones(W,1) * (u .^2);
+    opwind = opwind + opwind' + u' * u;
+    opwind = 1 - (2*Q/M)^2 * opwind;
     
-    hex = ones(winsize,1) * theta;
+    % hex: (boolean matrix) hexagonal boolean mask
+    hex = ones(W,1) * u;
     hex = abs(hex) + abs(hex') + abs(hex+hex');
-    hex = (hex < winsize);
+    hex = (hex < W);
     
+    % Apply the hexagonal mask
+    % Rescale the remaining values appropriately
     opwind = opwind .* hex;
-    opwind = opwind * (4 * mwind^2) / (7 * pi^2) ;
+    opwind = opwind * (4 * Q^2) / (7 * pi^2) ;
 
     % ---------------------------------------------------------------
     % Create a table to store bispectra and sleep stage labels
@@ -110,9 +115,9 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
     names = [X.Properties.VariableNames{channel}, "Annotations"];
     types = ["cell", "string"];
     
-    bis = table(                        ...
-        'Size',          [nrecs 2],     ...
-        'VariableTypes', types,         ...
+    bis = table(                    ...
+        'Size',          [N 2],     ...
+        'VariableTypes', types,     ...
         'VariableNames', names);
     
     bis.Annotations = X.Annotations;
@@ -121,52 +126,59 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
     % Frequency axis
     % ---------------------------------------------------------------
 
-    if (rem(nfft,2) == 0)
-        freq = [-nfft/2:(nfft/2-1)];
+    if (rem(M,2) == 0)
+        freq = [-M/2:(M/2-1)];
     else
-        freq = [-(nfft-1)/2:(nfft-1)/2];                        
+        freq = [-(M-1)/2:(M-1)/2];                        
     end
 
     % ---------------------------------------------------------------
     % Estimation of Bispectra
     % ---------------------------------------------------------------
 
-    % array of indices for obtaining a truncated FFT
-    idx = 1:nfft;                                                                                                            
-    idx = idx(-fc * nfft <= freq * fs & freq * fs <= fc * nfft);
+    % idx: array of indices for obtaining a truncated FFT
+    % len: length of truncated FFT
+    idx = 1:M;                                                                                                            
+    idx = idx(-fc * M <= freq * fs & freq * fs <= fc * M);
     len = numel(idx);
 
-    % array of indices for accumulating triple products
-    mask = hankel([1:len],[len,1:len-1] );
+    % tri: array of indices for accumulating triple products
+    tri = hankel([1:len],[len,1:len-1] );
 
     % Bispectrum estimations for every 30sec record
-    for i = 1:nrecs
+    for i = 1:1:N
+        % x: a 30sec EEG recording
+        % B: 2D matrix for storing the bispectrum of x
+        % ind: array of indices for extracting partitions from x
         B  = zeros(len,len);                                              
-        locseg = [1:nsamp]';
+        ind = [1:M]';
         x = cell2mat(X{i,channel});
 
-        % Calculate partial bispectra for every segment
-        for j = 1:K
-            % Estimate the FFT of the segment
-            xseg = x(locseg);                                              
-            Xf   = fft(xseg-mean(xseg), nfft)/nsamp;
+        % Calculate partial bispectra for every partition
+        for j = 1:1:K
+            % xseg: (1D array) a partition of x
+            % Xf: (1D array) the FFT of xseg
+            y = x(ind);                                              
+            Y = fft(y-mean(y), M) / M;
             
-            % Discard any frequencies above fc and below -fc 
+            % Discard any frequencies above +fc and below -fc 
             % by truncating the result of the previous FFT
-            Xf = fftshift(Xf);
-            Xf = Xf(idx);                                                
-            Xf = ifftshift(Xf);
+            Y = fftshift(Y);
+            Y = Y(idx);                                                
+            Y = ifftshift(Y);
 
             % Accumulate triple products
-            CXf    = conj(Xf);
-            B      = B + (Xf * Xf.') .* reshape(CXf(mask), len, len);    
-            locseg = locseg + nadvance;                                    
+            CY = conj(Y);
+            B  = B + (Y * Y.') .* reshape(CY(tri), len, len);    
+            
+            % update the indices of ind
+            ind = ind + M;                                    
         end
 
         % Shift the elements of the bispectrum matrix
         B = fftshift(B)/K;
 
-        % Frequency domain smoothing
+        % Frequency domain smoothing with the Rao-Gabr window
         B = conv2(B,opwind,'same');    
         
         % Save the results and proceed to the next record
@@ -176,6 +188,6 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
     % ---------------------------------------------------------------
     % Truncate the frequency axis and rescale according to fs 
     % ---------------------------------------------------------------
-    freq = freq(-fc * nfft <= freq *fs & freq * fs <= fc * nfft);
-    freq = freq * fs / nfft;
+    freq = freq(idx);
+    freq = freq * fs / M;
 return
