@@ -24,8 +24,6 @@
 % of the EOG signals estimated in a 30sec window. REM sleep 
 % correlates with values near -1.0, whereas NREM sleep correlates
 % with values near +1.0.
-% strongly correlates with values near -1.0. NREM sleep does not 
-% exhibit this kind of behavior.
 % The second column contains the sleep stage Annotation of that 
 % window.
 % -------------------------------------------------------------------
