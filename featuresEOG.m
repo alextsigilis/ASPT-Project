@@ -1,10 +1,40 @@
+% ===================================================================
+%
+% Author: Christodoulos Michaelides
+% Date: August 21st, 2022
+% -------------------------------------------------------------------
+%
+% Function Description: 
+% Distinguishing between REM and NREM sleep usually requires
+% visual inspection of two EOG recordings. This functions extracts
+% useful features from the EOG channels which can then be used to  
+% automate this decision process. 
+% -------------------------------------------------------------------
+%
+% Arguments List: (X)
+%
+% X: (table) A table which contains EEG,EOG,EMG and ECG recordings.
+% You should use loadEDF to obtain this table.
+% -------------------------------------------------------------------
+%
+% Return List: (features)
+%
+% features: (table) a table with two columns. 
+% The first column contains the cross-correlation coefficient 
+% of the EOG signals estimated in a 30sec window. REM sleep 
+% strongly correlates with values near -1.0. NREM does not 
+% exibit this kind of behavior.
+% The second column contains the sleep stage Annotation of that 
+% window.
+% -------------------------------------------------------------------
+
 function [features] = featuresEOG(X)
     N = size(X,1);
 
     % Initialize an empty table to store
     % the features and sleep stage Annotations
     types = ["double" "string"];
-    names = ["corr" "Annotations"];
+    names = ["xcorr" "Annotations"];
     
     features = table(               ...
         'Size',             [N 2],  ...
@@ -25,6 +55,6 @@ function [features] = featuresEOG(X)
         y = (y - mean(y)) / std(y);
         
         % Estimate the cross-correlation coefficient
-        features{i,"corr"} = mean(x.*y);
+        features{i,"xcorr"} = mean(x .* y);
     end
 end
