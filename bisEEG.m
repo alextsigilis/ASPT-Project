@@ -106,7 +106,6 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
     % Apply the hexagonal mask
     % Rescale the remaining values appropriately
     opwind = opwind .* hex;
-    opwind = opwind * (4 * Q^2) / (7 * pi^2);
     opwind = opwind ./ sum(opwind(:));
 
     % ---------------------------------------------------------------
@@ -159,8 +158,8 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
         for j = 1:1:K
             % y: (1D array) a partition of x
             % Y: (1D array) the FFT of y
-            y = x(ind);                                              
-            Y = fft(y-mean(y), M) / M;
+            y = x(ind);                                             
+            Y = fft(y-mean(y)) / M;
             
             % Discard any frequencies above +fc and below -fc 
             % by truncating the result of the previous FFT
@@ -187,7 +186,7 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
     end
 
     % ---------------------------------------------------------------
-    % Truncate the frequency axis and rescale according to fs 
+    % Truncate the frequency axis and rescale it according to fs 
     % ---------------------------------------------------------------
     freq = freq(idx);
     freq = freq * fs / M;
