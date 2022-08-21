@@ -86,7 +86,7 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
     % Construction of frequency domain window function
     % ---------------------------------------------------------------
     
-    % W: (integer) Size of Rao-Gabr window  (must be an odd number)
+    % W: (integer) Size of Rao-Gabr window (must be an odd number)
     W = 5;
     
     % temporary variables for constructing the Rao-Gabr window
@@ -176,7 +176,7 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
         end
 
         % Shift the elements of the bispectrum matrix
-        B = fftshift(B)/K;
+        B = fftshift(B) / K;
 
         % Frequency domain smoothing with the Rao-Gabr window
         B = conv2(B,opwind,'same');    
