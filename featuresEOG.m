@@ -22,8 +22,8 @@
 % features: (table) a table with two columns. 
 % The first column contains the cross-correlation coefficient 
 % of the EOG signals estimated in a 30sec window. REM sleep 
-% strongly correlates with values near -1.0. NREM does not 
-% exibit this kind of behavior.
+% strongly correlates with values near -1.0. NREM sleep does not 
+% exhibit this kind of behavior.
 % The second column contains the sleep stage Annotation of that 
 % window.
 % -------------------------------------------------------------------
