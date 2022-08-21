@@ -22,13 +22,10 @@
 % features: (table) a table with two columns. 
 % The first column contains the cross-correlation coefficient 
 % of the EOG signals estimated in a 30sec window. REM sleep 
-<<<<<<< HEAD
 % correlates with values near -1.0, whereas NREM sleep correlates
 % with values near +1.0.
-=======
 % strongly correlates with values near -1.0. NREM sleep does not 
 % exhibit this kind of behavior.
->>>>>>> 74d490bc7bd9fa82c6cc548781c86adc8e213a6f
 % The second column contains the sleep stage Annotation of that 
 % window.
 % -------------------------------------------------------------------
@@ -38,28 +35,44 @@ function [features] = featuresEOG(X)
 
     % Initialize an empty table to store
     % the features and sleep stage Annotations
-    types = ["double" "string"];
-    names = ["xcorr" "Annotations"];
+    types = ["double" "double" "double" "string"];
+    names = ["low" "mid" "high" "Annotations"];
     
     features = table(               ...
-        'Size',             [N 2],  ...
+        'Size',             [N 4],  ...
         'VariableTypes',    types,  ...
         'VariableNames',    names);
 
-    % Copy the sleep stage Annotations
     features.Annotations = X.Annotations;
 
+    % MRA decomposition on 1st EOG channel
+    dwt1 = mraEEG(X,"EOGE1_M2");
+
+    % MRA decomposition on 2nd EOG channel
+    dwt2 = mraEEG(X,"EOGE2_M2");
+
     for i = 1:1:N
-        % Extract two 30sec epochs 
-        % from the EOG channels
-        x = cell2mat(X{i,"EOGE1_M2"});
-        y = cell2mat(X{i,"EOGE2_M2"});
-        
-        % Normalize the samples
-        x = (x - mean(x)) / std(x);
-        y = (y - mean(y)) / std(y);
-        
-        % Estimate the cross-correlation coefficient
-        features{i,"xcorr"} = mean(x .* y);
+        % normalized DWT coefficients of 0Hz-4Hz scale
+        low1 = cell2mat(dwt1{i,"delta"});
+        low2 = cell2mat(dwt2{i,"delta"});
+        low1 = (low1 - mean(low1)) / std(low1);
+        low2 = (low2 - mean(low2)) / std(low2);
+
+        % normalized DWT coefficients of 4Hz-8Hz scale
+        mid1 = cell2mat(dwt1{i,"theta"});
+        mid2 = cell2mat(dwt2{i,"theta"});
+        mid1 = (mid1 - mean(mid1)) / std(mid1);
+        mid2 = (mid2 - mean(mid2)) / std(mid2);
+
+        % normalized DWT coefficients of 8Hz-16Hz scale
+        high1 = cell2mat(dwt1{i,"alpha"});
+        high2 = cell2mat(dwt2{i,"alpha"});
+        high1 = (high1 - mean(high1)) / std(high1);
+        high2 = (high2 - mean(high2)) / std(high2);
+
+        % cross-correlation of EOG channels in different scales
+        features{i,"low"}  = mean(low1 .* low2);
+        features{i,"mid"}  = mean(mid1 .* mid2);
+        features{i,"high"} = mean(high1 .* high2);
     end
 end
