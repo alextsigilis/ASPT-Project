@@ -106,7 +106,8 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
     % Apply the hexagonal mask
     % Rescale the remaining values appropriately
     opwind = opwind .* hex;
-    opwind = opwind * (4 * Q^2) / (7 * pi^2) ;
+    opwind = opwind * (4 * Q^2) / (7 * pi^2);
+    opwind = opwind ./ sum(opwind(:));
 
     % ---------------------------------------------------------------
     % Create a table to store bispectra and sleep stage labels
@@ -138,7 +139,7 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
 
     % idx: array of indices for obtaining a truncated FFT
     % len: length of truncated FFT
-    idx = 1:M;                                                                                                            
+    idx = 1:M;
     idx = idx(-fc * M <= freq * fs & freq * fs <= fc * M);
     len = numel(idx);
 
@@ -156,8 +157,8 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
 
         % Calculate partial bispectra for every partition
         for j = 1:1:K
-            % xseg: (1D array) a partition of x
-            % Xf: (1D array) the FFT of xseg
+            % y: (1D array) a partition of x
+            % Y: (1D array) the FFT of y
             y = x(ind);                                              
             Y = fft(y-mean(y), M) / M;
             
