@@ -101,65 +101,71 @@ function [bic, freq] = bicEEG(X, fs, fc, K, channel)
     % Estimation of Bispectra
     % ---------------------------------------------------------------
 
-    % idx: array of indices for obtaining a truncated FFT
+    % idx: array of indices for discarding unnecessary FFT components
     % len: length of truncated FFT
+    % win: hanning window for FFT
+    % tri: array of indices for accumulating triple products
     idx = 1:M;
     idx = idx(-fc * M <= freq * fs & freq * fs <= fc * M);
     len = numel(idx);
+    win = hanning(M);
+    tri = hankel([1:len],[len,1:len-1]);
 
-    % tri: array of indices for accumulating triple products
-    tri = hankel([1:len],[len,1:len-1] );
+    % Bicoherence estimation for every 30sec epoch
+    for i = 1:N
+        % x: (1D array) a 30sec EEG recording
+        % b: (2D array) bispectrum/bicoherence matrix 
+        % P: (1D array) power-spectrum 
+        x = cell2mat(X{i,channel}); 
+        b = zeros(len,len);
+        P = zeros(len,1);
 
-    % Bispectrum estimations for every 30sec record
-    for i = 1:1:N
-        % x:   (1D array) a 30sec EEG recording
-        % ind: (1D array) array of indices for partitioning x
-        % win: (1D array) time-domain Hanning window
-        ind = [1:M]';
-        x   = cell2mat(X{i,channel});
-        win = hanning(M);
+        % ind:  (1D array) array of indices
+        % to extract EEG segments
+        % -----------------------------------
+        % Y12: (2D array) temporary array to
+        % accumulate triple products.
+        mask = tri;
+        Y12  = zeros(len,len);
+        ind  = [1:M];
 
-        % B,F3,F12: (2D matrices) temporary variables
-        % for accumulating triple products
-        B   = zeros(len,len);
-        F12 = zeros(len,len);
-        F3  = zeros(len,len);
+        % Partial estimations for every sub-segment
+        for j = 1:K
+            % Extract a segment from x
+            y = x(ind);
 
-        % Calculate partial bispectra for every partition
-        for j = 1:1:K
-            % y: (1D array) a partition of x
-            % Y: (1D array) the FFT of y
-            y = x(ind); y = y - mean(y);                                         
-            Y = fft(y .* win);
-            
-            % Discard any frequencies above +fc and below -fc 
-            % by truncating the result of the previous FFT
-            Y = fftshift(Y);
-            Y = Y(idx);                                                
-            Y = ifftshift(Y);
+            % Subtract the mean and
+            % apply the hanning window
+    	    y = (y(:) - mean(y)) .* win;
+
+            % Estimate the FFT of the segment
+            % and discard unnecessary frequencies
+    	    Y  = fft(y) / M;
+            Y  = fftshift(Y);
+            Y  = Y(idx);
+            Y  = ifftshift(Y);
             CY = conj(Y);
 
-            % Estimate triple products
-            temp1 = reshape(CY(tri),len,len);
-            temp2 = Y * Y.';
+            % Update the estimation of the power-spectrum
+            % Accumulate new triple products
+            % Update the bispectrum estimation
+    	    P = P + Y .* CY;
+            Y12(:) = CY(mask);
+            b = b + (Y * Y.') .* Y12;
             
-            % Accumulate triple products
-            B   = B   + temp1 .* temp2;
-            F3  = F3  + abs(temp1) .^ 2;
-            F12 = F12 + abs(temp2) .^ 2;
-            
-            % update the indices of ind
-            ind = ind + M;                                    
+            % update the slicing indices
+            ind = ind + M;
         end
 
-        % Calculate the bicoherence indices
-        b = (abs(B) .^ 2) ./ (F12 .* F3);
-
-        % Shift the elements of the bicoherence matrix
-        b = fftshift(b);
+        % Normalize the bispectrum to obtain the bicoherence
+        b = b / K;
+        P = P / K;
+        mask(:) = P(mask);
+        b = abs(b).^2 ./ (P * P.' .* mask);
         
-        % Save the results and proceed to the next record
-        bic{i,1} = {b};
+        % Shift the elements of the bicoherence
+        % matrix and save the final result.
+        bic{i,1} = {fftshift(b)};
     end
 
     % ---------------------------------------------------------------
