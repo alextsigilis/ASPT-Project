@@ -1,12 +1,12 @@
 % ===================================================================
 %
-% Author: Christodoulos Michaelides
+% Author: Chrysa Doulou, Christodoulos Michaelides
 % Date: August 21st, 2022
 % -------------------------------------------------------------------
 %
 % Function Description: 
 % Distinguishing between REM and NREM sleep usually requires
-% visual inspection of two EOG recordings. This functions extracts
+% visual inspection of EOG recordings. This function extracts
 % useful features from the EOG channels which can then be used to  
 % automate this decision process. 
 % -------------------------------------------------------------------
@@ -20,57 +20,69 @@
 % Return List: (features)
 %
 % features: (table) a table with two columns. 
-% The first column contains the cross-correlation coefficient 
+% The 1st column contains the cross-correlation coefficient 
 % of the EOG signals estimated in a 30sec window. REM sleep 
 % correlates with values near -1.0, whereas NREM sleep correlates
 % with values near +1.0.
-% The second column contains the sleep stage Annotation of that 
-% window.
+% The 2nd and 3rd column contain the standard deviation of the 
+% EOG channels. Large variation corresponds to strong eye
+% movements.
+% The 4th and 5th columns contain the AUC values (area under
+% curve) of the EOG channels. Large AUC values indicate strong
+% eye movement.
+% The 6th column contains the sleep stage Annotation of the 
+% EOG signals.
 % -------------------------------------------------------------------
 
 function [features] = featuresEOG(X)
+    % Number of 30sec epochs
     N = size(X,1);
 
     % Initialize an empty table to store
     % the features and sleep stage Annotations
-    types = ["double" "double" "double" "string"];
-    names = ["low" "mid" "high" "Annotations"];
+    types = [               ...
+        "double"            ...
+        "double"            ...
+        "double"            ...
+        "double"            ...
+        "double"            ...
+        "string"];
+    
+    names = [               ...
+        "xcorr"             ...
+        "stdDev1"           ...
+        "stdDev2"           ...
+        "AUC1"              ...
+        "AUC2"              ...
+        "Annotations"];
     
     features = table(               ...
-        'Size',             [N 4],  ...
+        'Size',             [N 6],  ...
         'VariableTypes',    types,  ...
         'VariableNames',    names);
 
     features.Annotations = X.Annotations;
 
-    % MRA decomposition on 1st EOG channel
+    % Wavelet Decomposition
     dwt1 = mraEEG(X,"EOGE1_M2");
-
-    % MRA decomposition on 2nd EOG channel
     dwt2 = mraEEG(X,"EOGE2_M2");
 
     for i = 1:1:N
-        % normalized DWT coefficients of 0Hz-4Hz scale
-        low1 = cell2mat(dwt1{i,"delta"});
-        low2 = cell2mat(dwt2{i,"delta"});
-        low1 = (low1 - mean(low1)) / std(low1);
-        low2 = (low2 - mean(low2)) / std(low2);
+        % Extract 30sec segments from the EOG signals
+        x = cell2mat(dwt1{i,"delta"});
+        y = cell2mat(dwt2{i,"delta"});
 
-        % normalized DWT coefficients of 4Hz-8Hz scale
-        mid1 = cell2mat(dwt1{i,"theta"});
-        mid2 = cell2mat(dwt2{i,"theta"});
-        mid1 = (mid1 - mean(mid1)) / std(mid1);
-        mid2 = (mid2 - mean(mid2)) / std(mid2);
+        % Calculate (normalized) AUC values
+        features{i,"AUC1"} = sum(abs(x)) / numel(x);
+        features{i,"AUC2"} = sum(abs(y)) / numel(y);
 
-        % normalized DWT coefficients of 8Hz-16Hz scale
-        high1 = cell2mat(dwt1{i,"alpha"});
-        high2 = cell2mat(dwt2{i,"alpha"});
-        high1 = (high1 - mean(high1)) / std(high1);
-        high2 = (high2 - mean(high2)) / std(high2);
+        % Calculate standard deviation
+        features{i,"stdDev1"} = std(x);
+        features{i,"stdDev2"} = std(y);
 
-        % cross-correlation of EOG channels in different scales
-        features{i,"low"}  = mean(low1 .* low2);
-        features{i,"mid"}  = mean(mid1 .* mid2);
-        features{i,"high"} = mean(high1 .* high2);
+        % Calculate the cross correlation of the EOG channels
+        w = (x - mean(x)) ./ std(x);
+        z = (y - mean(y)) ./ std(y);
+        features{i,"xcorr"} = mean(w .* z);
     end
 end
