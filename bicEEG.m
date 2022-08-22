@@ -10,8 +10,9 @@
 % phase coupling between different frequencies. The
 % bicoherence is essentially a normalized bispectrum.
 % Many methods have been proposed to normalize the 
-% bispectrum. This function uses the one proposed by
-% Hagihira 2001 and Hayashi 2007. 
+% bispectrum. This function uses the same one as the
+% the one implemented in the High Order Spectral 
+% Analysis Toolbox (HOSA)
 % -------------------------------------------------------------------
 %
 % Arguments List: (X, K, fs, fc, channel)
