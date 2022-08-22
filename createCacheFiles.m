@@ -17,8 +17,8 @@
 % in .mat files to speed up file I/O operations in the future.
 %
 % You don't have to manually load data from those .mat files. 
-% Instead, loadEDF always looks for them before attempting to 
-% read EDF files.
+% Instead, loadEDF() attempts to retrieve data from them before
+% reading the slower EDF files.
 % =============================================================
 
 clear all; close all; clc;
