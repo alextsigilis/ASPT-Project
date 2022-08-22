@@ -9,17 +9,17 @@ clear all; close all; clc;
 % ==========================================================
 
 id1 = 1;            % first patient
-id2 = 25;           % last patient
+id2 = 50;           % last patient
 nbins = 100;        % number of bins for histograms
 
 % ==========================================================
 % Extract features from EOG recordings
 % ==========================================================
 
-features = table(                                               ...
-    'Size',             [0 4],                                  ...
-    'VariableTypes',    ["double" "double" "double" "string"],  ...
-    'VariableNames',    ["low" "mid" "high" "Annotations"]);
+sz = [0 6];
+types = ["double" "double" "double" "double" "double" "string"];
+names = ["xcorr" "stdDev1" "stdDev2" "AUC1" "AUC2" "Annotations"];
+features = table('Size',sz,'VariableTypes',types,'VariableNames',names);
 
 for i = id1:1:id2
     if ~isfile(sprintf("SN%03d.edf",i)) continue; end
@@ -39,54 +39,97 @@ end
 
 % mask1: (1D array) boolean array for REM epochs
 % mask2: (1D array) boolean array for NREM epochs
+% mask3: (1D array) boolean array for wakefullness (Sleep stage W) 
 mask1 = features{:,"Annotations"} == "Sleep stage R";
 mask2 = features{:,"Annotations"} ~= "Sleep stage R";
+mask3 = features{:,"Annotations"} ~= "Sleep stage W";
 
-% Histogram of cross-correlation for REM sleep (0Hz-4Hz scale)
-[counts1, centers1] = hist(features{mask1, "low"}, nbins);
-counts1 = counts1 / sum(counts1);
+% ----------------------------------------------------------------
+
+% Histogram of cross-correlation for REM sleep
+[y1, x1] = hist(features{mask1 & mask3, "xcorr"}, nbins);
+y1 = y1 / sum(y1);
 
 % Histogram of cross-correlation for NREM sleep 
-[counts2, centers2] = hist(features{mask2, "low"}, nbins);
-counts2 = counts2 / sum(counts2);
+[y2, x2] = hist(features{mask2 & mask3, "xcorr"}, nbins);
+y2 = y2 / sum(y2);
 
 % Display the histograms
 figure(1); hold on; grid on;
-plot(centers1,counts1,'r',centers2,counts2,'b');
+plot(x1,y1,'r',x2,y2,'b');
 xlabel("EOG cross-correlation coefficients");
 ylabel("Relative frequency");
-title("Histogram of cross-correlation (0Hz-4Hz)");
+title("Histogram of EOG cross-correlation");
 legend("REM","Non-REM");
 
-% Histogram of cross-correlation for REM sleep (4Hz-8Hz scale)
-[counts1, centers1] = hist(features{mask1, "mid"}, nbins);
-counts1 = counts1 / sum(counts1);
+% ----------------------------------------------------------------
 
-% Histogram of cross-correlation for NREM sleep 
-[counts2, centers2] = hist(features{mask2, "mid"}, nbins);
-counts2 = counts2 / sum(counts2);
+% Histogram of AUC (EOG E1-M2) for REM sleep
+[y1, x1] = hist(features{mask1 & mask3, "AUC1"}, nbins);
+y1 = y1 / sum(y1);
 
-% Display the histograms
-figure(2); hold on; grid on;
-plot(centers1,counts1,'r',centers2,counts2,'b');
-xlabel("EOG cross-correlation coefficients");
+% Histogram of AUC (EOG E1-M2) for NREM sleep
+[y2, x2] = hist(features{mask2 & mask3, "AUC1"}, nbins);
+y2 = y2 / sum(y2);
+
+% Display the Histograms
+figure(2); hold on; grid on; 
+plot(x1,y1,'r',x2,y2,'b');
+xlabel("AUC values");
 ylabel("Relative frequency");
-title("Histogram of cross-correlation (4Hz-8Hz)");
-legend("REM","Non-REM");
+title("Histogram of AUC for EOG E1-M2")
+legend("REM", "Non-REM");
 
-% Histogram of cross-correlation for REM sleep (8Hz-16Hz scale)
-[counts1, centers1] = hist(features{mask1, "high"}, nbins);
-counts1 = counts1 / sum(counts1);
+% ----------------------------------------------------------------
 
-% Histogram of cross-correlation for NREM sleep 
-[counts2, centers2] = hist(features{mask2, "high"}, nbins);
-counts2 = counts2 / sum(counts2);
+% Histogram of AUC (EOG E2-M2) for REM sleep
+[y1, x1] = hist(features{mask1 & mask3, "AUC2"}, nbins);
+y1 = y1 / sum(y1);
 
-% Display the histograms
-figure(3); hold on; grid on;
-plot(centers1,counts1,'r',centers2,counts2,'b');
-xlabel("EOG cross-correlation coefficients");
+% Histogram of AUC (EOG E2-M2) for NREM sleep
+[y2, x2] = hist(features{mask2 & mask3, "AUC2"}, nbins);
+y2 = y2 / sum(y2);
+
+% Display the Histograms
+figure(3); hold on; grid on; 
+plot(x1,y1,'r',x2,y2,'b');
+xlabel("AUC values");
 ylabel("Relative frequency");
-title("Histogram of cross-correlation (8Hz-16Hz)");
-legend("REM","Non-REM");
+title("Histogram of AUC for EOG E2-M2")
+legend("REM", "Non-REM");
 
+% ----------------------------------------------------------------
+
+% Histogram of standard deviation (EOG E1-M2) for REM sleep
+[y1, x1] = hist(features{mask1 & mask3, "stdDev1"}, nbins);
+y1 = y1 / sum(y1);
+
+% Histogram of standard deviation (EOG E1-M2) for NREM sleep
+[y2, x2] = hist(features{mask2 & mask3, "stdDev1"}, nbins);
+y2 = y2 / sum(y2);
+
+% Display the Histograms
+figure(4); hold on; grid on; 
+plot(x1,y1,'r',x2,y2,'b');
+xlabel("std values");
+ylabel("Relative frequency");
+title("Histogram of standard Deviation for EOG E1-M2")
+legend("REM", "Non-REM");
+
+% ----------------------------------------------------------------
+
+% Histogram of standard deviation (EOG E2-M2) for REM sleep
+[y1, x1] = hist(features{mask1 & mask3, "stdDev2"}, nbins);
+y1 = y1 / sum(y1);
+
+% Histogram of standard deviation (EOG E2-M2) for NREM sleep
+[y2, x2] = hist(features{mask2 & mask3, "stdDev2"}, nbins);
+y2 = y2 / sum(y2);
+
+% Display the Histograms
+figure(5); hold on; grid on; 
+plot(x1,y1,'r',x2,y2,'b');
+xlabel("std values");
+ylabel("Relative frequency");
+title("Histogram of standard Deviation for EOG E2-M2")
+legend("REM", "Non-REM");
