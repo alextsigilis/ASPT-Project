@@ -57,6 +57,15 @@ if ~isfile(input_file) || ~isfile(annot_file)
     error("Error: Input files not found\n\n");
 end
 
+% Try to retrieve the EDF recordings from the cache files.
+% (Depending on your storage medium this can be up to 10
+% times faster)
+cache = sprintf("%03d.mat",idx);
+if isfile(cache)
+    load(cache,'Z');
+    return;
+end
+
 % X:    (timetable) the EEG/EOG/EMG/ECG recordings
 % y:    (timetable) the sleep stage annotations
 % info: metadata of the input file
@@ -162,4 +171,10 @@ Z = renamevars(Z,Z.Properties.VariableNames,channel_names);
 Z = addvars(Z,y.Annotations,'NewVariableNames','Annotations');
 Z = addvars(Z,y.Onset,'NewVariableNames','Onset');
 Z = table2timetable(Z);
+
+% Save the final timetable in a mat file (cache). You read 
+% the data from the mat file the next time you need them 
+% to save some time. 
+save(cache,'Z');
+
 end
