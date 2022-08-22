@@ -171,10 +171,4 @@ Z = renamevars(Z,Z.Properties.VariableNames,channel_names);
 Z = addvars(Z,y.Annotations,'NewVariableNames','Annotations');
 Z = addvars(Z,y.Onset,'NewVariableNames','Onset');
 Z = table2timetable(Z);
-
-% Save the final timetable in a mat file (cache). You read 
-% the data from the mat file the next time you need them 
-% to save some time. 
-save(cache,'Z');
-
 end
