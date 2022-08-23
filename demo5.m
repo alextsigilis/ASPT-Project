@@ -1,4 +1,18 @@
 % ====================================================================
+% Author: Christodoulos Michaelides
+% Date: August, 2022
+% --------------------------------------------------------------------
+%
+% Demo script 5:
+%
+% 1) Choose a number of patients from the dataset
+% 2) Choose one out of the four EEG channels and decompose it to 
+%    delta, theta, alpha and beta waves by applying the discrete 
+%    wavelet transform.
+% 3) Plot histograms of the DWT coefficients 
+% ====================================================================
+
+% ====================================================================
 % 1) Reset your Workspace
 % ====================================================================
 clear all; close all; clc;

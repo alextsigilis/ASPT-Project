@@ -1,4 +1,18 @@
 % ==========================================================
+% Author: Christodoulos Michaelides
+% Date: August 22nd, 2022
+% ----------------------------------------------------------
+%
+% Demo Script 8:
+%
+% 1) Choose a number of patients from the dataset
+% 2) Extract features from the EOG recordings of those
+%    patients
+% 3) Plot histograms of those features for REM and Non-REM
+%    sleep stages
+% ==========================================================
+
+% ==========================================================
 % Reset your workspace variables
 % ==========================================================
 

@@ -16,7 +16,7 @@
 %    one 30sec recording for Sleep stage N1
 %    one 30sec recording for Sleep stage N2
 %    one 30sec recording for Sleep stage N3
-%    one 30sec recording for Sleep stage W
+%    one 30sec recording for Sleep stage R
 %
 % 4) Estimate the Bispectra of those EEG recordings.
 %

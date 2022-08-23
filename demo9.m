@@ -42,7 +42,7 @@ fprintf("Done\n"); toc;
 
 fprintf("Estimating bicoherence index ... "); tic;
 [bic, freq] = bicEEG(Z,fs,fc,K,channel_ID);
-fprintf("Done"); toc;
+fprintf("Done\n"); toc;
 
 % =============================================================
 % 3) Bicoherence Plots
