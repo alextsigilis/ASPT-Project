@@ -52,8 +52,10 @@ N = size(bic,1);
 pause('on');
 
 for i = 1:1:N
+    b = cell2mat(bic{i,1});
+    contourf(freq,freq,b,levels,'LineColor','none');
     txt = sprintf("frame %d out of %d: %s",i,N,bic.Annotations{i});
-    contourf(freq,freq,cell2mat(bic{i,1}),levels,'LineColor','none');
     xlabel('f_1'); ylabel('f_2'); title(txt);
+    caxis([0.0 1.0]); colormap turbo; colorbar;
     pause(dt);
 end
