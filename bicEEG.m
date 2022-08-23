@@ -10,9 +10,7 @@
 % phase coupling between different frequencies. The
 % bicoherence is essentially a normalized bispectrum.
 % Many methods have been proposed to normalize the 
-% bispectrum. This function uses the same one as the
-% the one implemented in the High Order Spectral 
-% Analysis Toolbox (HOSA)
+% bispectrum. This function uses the one by Nagashima, 2006.
 % -------------------------------------------------------------------
 %
 % Arguments List: (X, K, fs, fc, channel)
@@ -115,19 +113,17 @@ function [bic, freq] = bicEEG(X, fs, fc, K, channel)
     % Bicoherence estimation for every 30sec epoch
     for i = 1:N
         % x: (1D array) a 30sec EEG recording
-        % b: (2D array) bispectrum/bicoherence matrix 
-        % P: (1D array) power-spectrum 
+        % b: (2D array) bispectrum/bicoherence matrix
         x = cell2mat(X{i,channel}); 
-        b = zeros(len,len);
-        P = zeros(len,1);
+        b = zeros(len,len); 
+
+        % P1, P2, Y12: (2D array) temporary placeholders
+        P1  = zeros(len,len); 
+        P12 = zeros(len,len);
+        Y12 = zeros(len,len);
 
         % ind:  (1D array) array of indices
         % to extract EEG segments
-        % -----------------------------------
-        % Y12: (2D array) temporary array to
-        % accumulate triple products.
-        mask = tri;
-        Y12  = zeros(len,len);
         ind  = [1:M];
 
         % Partial estimations for every sub-segment
@@ -148,21 +144,19 @@ function [bic, freq] = bicEEG(X, fs, fc, K, channel)
             CY = conj(Y);
 
             % Update the estimation of the power-spectrum
-            % Accumulate new triple products
             % Update the bispectrum estimation
-    	    P = P + Y .* CY;
-            Y12(:) = CY(mask);
-            b = b + (Y * Y.') .* Y12;
+            temp = Y * Y.';
+            Y12(:) = CY(tri);
+            P1  = P1 + abs(temp) .^ 2;
+            P12 = P12 + abs(Y12) .^ 2;
+            b   = b + (temp) .* Y12;
             
             % update the slicing indices
             ind = ind + M;
         end
 
         % Normalize the bispectrum to obtain the bicoherence
-        b = b / K;
-        P = P / K;
-        mask(:) = P(mask);
-        b = abs(b).^2 ./ (P * P.' .* mask);
+        b = abs(b).^2 ./ (P1.*P12);
         
         % Shift the elements of the bicoherence
         % matrix and save the final result.
