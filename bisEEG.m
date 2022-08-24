@@ -142,6 +142,13 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
     idx = idx(-fc * M <= freq * fs & freq * fs <= fc * M);
     len = numel(idx);
 
+    % Hexagonal mask to remove artifacts outside
+    % the hexagonal symmetry regions.
+    lo = -(len-1)/2; hi = +(len-1)/2; u = lo:1:hi;
+    hex = ones(len,1) * u;
+    hex = abs(hex) + abs(hex') + abs(hex+hex');
+    hex = (hex < len);
+
     % tri: array of indices for accumulating triple products
     tri = hankel([1:len],[len,1:len-1] );
 
@@ -182,7 +189,7 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
         B = conv2(B,opwind,'same');    
         
         % Save the results and proceed to the next record
-        bis{i,1} = {B};
+        bis{i,1} = {B .* hex};
     end
 
     % ---------------------------------------------------------------

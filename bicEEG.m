@@ -9,8 +9,18 @@
 % peaks of the bicoherence, we can detect quadratic
 % phase coupling between different frequencies. The
 % bicoherence is essentially a normalized bispectrum.
-% Many methods have been proposed to normalize the 
-% bispectrum. This function uses the one by Nagashima, 2006.
+% Many methods have been used to normalize the bispectrum 
+% This function uses the one proposed by Nagashima, 2006:
+% 
+%                 <|F(f1)F(f2)F'(f1+f2)|^2>      
+% b(f1,f2) = ------------------------------------
+%              <|F(f1)F(f2)|^2> <|F'(f1+f2)|^2>
+%
+% where:
+%   1) the angled brackets <> denote averaging across all segments
+%   2) the apostrophe ' denotes complex conjugation
+%   3) F is the FFT of an EEG segment
+%   4) b is the bicoherence index
 % -------------------------------------------------------------------
 %
 % Arguments List: (X, K, fs, fc, channel)
@@ -110,6 +120,13 @@ function [bic, freq] = bicEEG(X, fs, fc, K, channel)
     win = hanning(M);
     tri = hankel([1:len],[len,1:len-1]);
 
+    % Hexagonal mask to remove artifacts outside
+    % the hexagonal symmetry regions.
+    lo = -(len-1)/2; hi = +(len-1)/2; u = lo:1:hi;
+    hex = ones(len,1) * u;
+    hex = abs(hex) + abs(hex') + abs(hex+hex');
+    hex = (hex < len);
+
     % Bicoherence estimation for every 30sec epoch
     for i = 1:N
         % x: (1D array) a 30sec EEG recording
@@ -117,10 +134,9 @@ function [bic, freq] = bicEEG(X, fs, fc, K, channel)
         x = cell2mat(X{i,channel}); 
         b = zeros(len,len); 
 
-        % P1, P2, Y12: (2D array) temporary placeholders
-        P1  = zeros(len,len); 
-        P12 = zeros(len,len);
-        Y12 = zeros(len,len);
+        % P12, P2: (2D array) normalization coefficients
+        P12 = zeros(len,len); 
+        P3  = zeros(len,len);
 
         % ind:  (1D array) array of indices
         % to extract EEG segments
@@ -144,23 +160,24 @@ function [bic, freq] = bicEEG(X, fs, fc, K, channel)
             CY = conj(Y);
 
             % Update the estimation of the power-spectrum
-            % Update the bispectrum estimation
-            temp = Y * Y.';
-            Y12(:) = CY(tri);
-            P1  = P1 + abs(temp) .^ 2;
+            % Update the estimation of the bispectrum
+            Y12 = Y * Y.';
+            Y3  = CY(tri);
             P12 = P12 + abs(Y12) .^ 2;
-            b   = b + (temp) .* Y12;
+            P3  = P3 + abs(Y3) .^ 2;
+            b   = b + Y12 .* Y3;
             
             % update the slicing indices
             ind = ind + M;
         end
 
         % Normalize the bispectrum to obtain the bicoherence
-        b = abs(b).^2 ./ (P1.*P12);
+        b = (abs(b) .^ 2) ./ (P12 .* P3);
         
-        % Shift the elements of the bicoherence
-        % matrix and save the final result.
-        bic{i,1} = {fftshift(b)};
+        % Shift the elements of the bicoherence matrix,
+        % remove any artifacts outside the symmetry regions
+        % and save the final result.
+        bic{i,1} = {fftshift(b) .* hex};
     end
 
     % ---------------------------------------------------------------
