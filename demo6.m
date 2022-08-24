@@ -75,20 +75,20 @@ B5 = cell2mat(bis{idx5,1});    % Extract the bispectrum for Sleep stage R
 
 figure(1); grid on;
 contourf(freq, freq, abs(B1), levels, 'LineColor', 'none');
-xlabel('f_1'); ylabel('f_2'); title('Sleep stage W');
+xlabel('f_1'); ylabel('f_2'); title('Sleep stage W'); colorbar;
 
 figure(2); grid on; 
 contourf(freq, freq, abs(B2), levels, 'LineColor', 'none');
-xlabel('f_1'); ylabel('f_2'); title('Sleep stage N1');
+xlabel('f_1'); ylabel('f_2'); title('Sleep stage N1'); colorbar;
 
 figure(3); grid on;
 contourf(freq, freq, abs(B3), levels, 'LineColor', 'none');
-xlabel('f_1'); ylabel('f_2'); title('Sleep stage N2');
+xlabel('f_1'); ylabel('f_2'); title('Sleep stage N2'); colorbar;
 
 figure(4); grid on;
 contourf(freq, freq, abs(B4), levels, 'LineColor', 'none');
-xlabel('f_1'); ylabel('f_2'); title('Sleep stage N3');
+xlabel('f_1'); ylabel('f_2'); title('Sleep stage N3'); colorbar;
 
 figure(5); grid on;
 contourf(freq, freq, abs(B5), levels,'LineColor','none');
-xlabel('f_1'); ylabel('f_2'); title('Sleep stage R');
+xlabel('f_1'); ylabel('f_2'); title('Sleep stage R'); colorbar;
