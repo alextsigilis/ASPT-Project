@@ -6,10 +6,10 @@
 % Demo Script 8:
 %
 % 1) Choose a number of patients from the dataset
-% 2) Extract features from the EOG recordings of those
-%    patients
-% 3) Plot histograms of those features for REM and Non-REM
-%    sleep stages
+% 2) Extract features from the EOG and EMG recordings of 
+%    those patients
+% 3) Plot histograms of those features for various sleep 
+%    stages.
 % ==========================================================
 
 % ==========================================================
@@ -25,25 +25,27 @@ clear all; close all; clc;
 id1 = 1;            % first patient
 id2 = 50;           % last patient
 nbins = 100;        % number of bins for histograms
+useDWT = true;      % Extract features from DWT 
+                    % coefficients or time-domain
 
 % ==========================================================
 % Extract features from EOG recordings
 % ==========================================================
 
-sz = [0 6];
-types = ["double" "double" "double" "double" "double" "string"];
-names = ["xcorr" "stdDev1" "stdDev2" "AUC1" "AUC2" "Annotations"];
+sz = [0 5];
+types = ["double" "double" "double" "double" "string"];
+names = ["xcorr" "ECB1" "ECB2" "stdEMG" "Annotations"];
 features = table('Size',sz,'VariableTypes',types,'VariableNames',names);
 
 for i = id1:1:id2
     if ~isfile(sprintf("SN%03d.edf",i)) continue; end
 
-    fprintf("Loading EOG recordings for patient %d ... ",i);
+    fprintf("Loading EOG/EMG recordings for patient %d ... ",i);
     Z = loadEDF(i);
     fprintf("Done\n");
 
-    fprintf("Extracting features from EOG recordings ... ");
-    features = [features; featuresEOG(Z)];
+    fprintf("Extracting features from EOG/EMG recordings ... ");
+    features = [features; features_EOG_EMG(Z,useDWT)];
     fprintf("Done\n");
 end
 
@@ -51,99 +53,87 @@ end
 % Plot histograms/scatterplots of features
 % ==========================================================
 
-% mask1: (1D array) boolean array for REM epochs
-% mask2: (1D array) boolean array for NREM epochs
-% mask3: (1D array) boolean array for wakefullness (Sleep stage W) 
-mask1 = features{:,"Annotations"} == "Sleep stage R";
-mask2 = features{:,"Annotations"} ~= "Sleep stage R";
-mask3 = features{:,"Annotations"} ~= "Sleep stage W";
+% isREM:    (1D array) boolean array for REM epochs
+% isNREM:   (1D array) boolean array for NREM epochs
+% isAsleep: (1D array) boolean array for REM or NREM epochs 
+
+isREM = features{:,"Annotations"} == "Sleep stage R";
+
+isNREM =                                                ... 
+    (features{:,"Annotations"} == "Sleep stage N1") |   ...
+    (features{:,"Annotations"} == "Sleep stage N2") |   ...
+    (features{:,"Annotations"} == "Sleep stage N3");
+
+isAsleep = isREM | isNREM;
 
 % ----------------------------------------------------------------
 
 % Histogram of cross-correlation for REM sleep
-[y1, x1] = hist(features{mask1 & mask3, "xcorr"}, nbins);
+[y1, x1] = hist(features{isREM, "xcorr"}, nbins);
 y1 = y1 / sum(y1);
 
 % Histogram of cross-correlation for NREM sleep 
-[y2, x2] = hist(features{mask2 & mask3, "xcorr"}, nbins);
+[y2, x2] = hist(features{isNREM, "xcorr"}, nbins);
 y2 = y2 / sum(y2);
 
 % Display the histograms
 figure(1); hold on; grid on;
 plot(x1,y1,'r',x2,y2,'b');
 xlabel("EOG cross-correlation coefficients");
-ylabel("Relative frequency");
+ylabel("probability");
 title("Histogram of EOG cross-correlation");
 legend("REM","Non-REM");
 
 % ----------------------------------------------------------------
 
-% Histogram of AUC (EOG E1-M2) for REM sleep
-[y1, x1] = hist(features{mask1 & mask3, "AUC1"}, nbins);
+% Histogram of EMG variance for Sleep stage W
+[y1, x1] = hist(features{~isAsleep, "stdEMG"}, 10*nbins);
 y1 = y1 / sum(y1);
 
-% Histogram of AUC (EOG E1-M2) for NREM sleep
-[y2, x2] = hist(features{mask2 & mask3, "AUC1"}, nbins);
+% Histogram of EMG variance for Sleep stages R, N1, N2 and N3
+[y2, x2] = hist(features{ isAsleep, "stdEMG"}, 10*nbins);
 y2 = y2 / sum(y2);
 
-% Display the Histograms
-figure(2); hold on; grid on; 
+% Display the histograms
+figure(2); hold on; grid on;
 plot(x1,y1,'r',x2,y2,'b');
-xlabel("AUC values");
-ylabel("Relative frequency");
-title("Histogram of AUC for EOG E1-M2")
-legend("REM", "Non-REM");
+xlabel("Standard deviation of chin-EMG");
+ylabel("probability");
+title("Histogram of EMG standard deviation");
+legend("Sleep stage W", "Sleep stages R,N1,N2 and N3");
 
 % ----------------------------------------------------------------
 
-% Histogram of AUC (EOG E2-M2) for REM sleep
-[y1, x1] = hist(features{mask1 & mask3, "AUC2"}, nbins);
+% Histogram of ECB1 for Sleep stage W
+[y1, x1] = hist(features{isREM, "ECB1"}, 10*nbins);
 y1 = y1 / sum(y1);
 
-% Histogram of AUC (EOG E2-M2) for NREM sleep
-[y2, x2] = hist(features{mask2 & mask3, "AUC2"}, nbins);
+% Histogram of ECB1 for Sleep stages R, N1, N2 and N3
+[y2, x2] = hist(features{isNREM, "ECB1"}, 10*nbins);
 y2 = y2 / sum(y2);
 
-% Display the Histograms
-figure(3); hold on; grid on; 
+% Display the histograms
+figure(3); hold on; grid on;
 plot(x1,y1,'r',x2,y2,'b');
-xlabel("AUC values");
-ylabel("Relative frequency");
-title("Histogram of AUC for EOG E2-M2")
-legend("REM", "Non-REM");
+xlabel("ECB1");
+ylabel("probability");
+title("Histogram of ECB for 1st EOG channel");
+legend("REM", "NREM");
 
 % ----------------------------------------------------------------
 
-% Histogram of standard deviation (EOG E1-M2) for REM sleep
-[y1, x1] = hist(features{mask1 & mask3, "stdDev1"}, nbins);
+% Histogram of ECB2 for Sleep stage W
+[y1, x1] = hist(features{isREM, "ECB2"}, 10*nbins);
 y1 = y1 / sum(y1);
 
-% Histogram of standard deviation (EOG E1-M2) for NREM sleep
-[y2, x2] = hist(features{mask2 & mask3, "stdDev1"}, nbins);
+% Histogram of ECB2 for Sleep stages R, N1, N2 and N3
+[y2, x2] = hist(features{isNREM, "ECB2"}, 10*nbins);
 y2 = y2 / sum(y2);
 
-% Display the Histograms
-figure(4); hold on; grid on; 
+% Display the histograms
+figure(4); hold on; grid on;
 plot(x1,y1,'r',x2,y2,'b');
-xlabel("std values");
-ylabel("Relative frequency");
-title("Histogram of standard Deviation for EOG E1-M2")
-legend("REM", "Non-REM");
-
-% ----------------------------------------------------------------
-
-% Histogram of standard deviation (EOG E2-M2) for REM sleep
-[y1, x1] = hist(features{mask1 & mask3, "stdDev2"}, nbins);
-y1 = y1 / sum(y1);
-
-% Histogram of standard deviation (EOG E2-M2) for NREM sleep
-[y2, x2] = hist(features{mask2 & mask3, "stdDev2"}, nbins);
-y2 = y2 / sum(y2);
-
-% Display the Histograms
-figure(5); hold on; grid on; 
-plot(x1,y1,'r',x2,y2,'b');
-xlabel("std values");
-ylabel("Relative frequency");
-title("Histogram of standard Deviation for EOG E2-M2")
-legend("REM", "Non-REM");
+xlabel("ECB2");
+ylabel("probability");
+title("Histogram of ECB for 2nd EOG channel");
+legend("REM", "NREM");
