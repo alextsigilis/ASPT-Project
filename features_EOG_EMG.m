@@ -28,10 +28,8 @@
 % cross-correlation is a very useful tool for detecting conjugate
 % waveforms in EOG signals, which are a common occurence
 % during REM sleep.
-% The 2nd and 3rd columns contain the total energy of the EOG
-% channels inside the 0.35Hz-0.50Hz frequency band (ECB). Those 
-% frequencies appear during rapid eye movements and they are a 
-% a strong indicator of REM sleep.
+% The 2nd and 3rd columns contain the total energy of the EOG channels 
+% inside the 0.10Hz-1.00Hz frequency band (ECB).
 % The 4th column contains the standard deviation of the chin-EMG.
 % Small values indicate muscle relaxiation and loss of consciousness,
 % whereas large values indicate wakefulness and alertness.
@@ -49,9 +47,10 @@
 function [features] = features_EOG_EMG(X, useDWT)
     % Number of 30sec epochs
     N = size(X,1);
+    if N == 0 error("X is empty"); end
 
     % Initialize an empty table to store
-    % the features and sleep stage Annotations
+    % features and sleep stage Annotations
     types = [               ...
         "double",           ...
         "double",           ...
@@ -74,16 +73,32 @@ function [features] = features_EOG_EMG(X, useDWT)
     % Copy sleep stage Annotations 
     features.Annotations = X.Annotations;
 
+    % T:   (float) duration of EOG recordings in seconds
+    % fs:  (float) sampling frequency of EOG recordings
+    % M:   (integer) number of samples in EOG recordings
+    % f:   (1D array) frequency axis of EOG power spectrum
+    % idx: (1D array) vector of indices for frequencies 
+    %       between 0.1Hz and 1.0Hz from the EOG power spectra.
+    idx = 4:1:31;
+    
+    % ------------------------------------------------------- 
+    % T = 30; fs = 256; M = fs * T;
+    % f = (-fs/2):(fs/M):(+fs/2-fs/M); f = ifftshift(f);
+    % idx = find(f >= 0.3 & f <= 0.5);
+    % -------------------------------------------------------
+
     for i = 1:1:N
         % Extract 30sec segments from
         % the EOG and EMG recordings.
-        x = X{i,"EOGE1_M2"};
-        y = X{i,"EOGE2_M2"};
-        z = X{i,"EMGChin"};
+        x = cell2mat(X{i,"EOGE1_M2"});
+        y = cell2mat(X{i,"EOGE2_M2"});
+        z = cell2mat(X{i,"EMGChin"});
         
         % ECB values for EOG channels
-        features{i,"ECB1"} = nan;
-        features{i,"ECB2"} = nan;
+        Xf = fft(x) / numel(x); Xf = abs(Xf(idx)).^2; 
+        Yf = fft(y) / numel(y); Yf = abs(Yf(idx)).^2;
+        features{i,"ECB1"} = sum(Xf) / numel(Xf);
+        features{i,"ECB2"} = sum(Yf) / numel(Yf);
         
         % Wavelet Denoising
         if useDWT == true
@@ -103,9 +118,9 @@ function [features] = features_EOG_EMG(X, useDWT)
         features{i,"stdEMG"} = std(z);
 
         % EOG cross-correlation
-        mx  = mean(x); my = mean(y);
-        sx  = std(x); sy = std(y);
+        mx = mean(x); sx = std(x);
+        my = mean(y); sy = std(y);
         mxy = mean(x.*y); 
-        features{i,"xcorr"} = (mxy - mx*my)/(sx*sy);
+        features{i,"xcorr"} = (mxy-mx*my)/(sx*sy);
     end
 end
