@@ -29,12 +29,12 @@ useDWT = false;     % Extract features from DWT
                     % coefficients or time-domain
 
 % ==========================================================
-% Extract features from EOG recordings
+% Extract features from EOG/EMG recordings
 % ==========================================================
 
-sz = [0 5];
-types = ["double" "double" "double" "double" "string"];
-names = ["xcorr" "ECB1" "ECB2" "stdEMG" "Annotations"];
+sz = [0 6];
+types = ["double" "double" "double" "double" "double" "string"];
+names = ["xcorr" "ECB1" "ECB2" "stdEMG" "VppEMG" "Annotations"];
 features = table('Size',sz,'VariableTypes',types,'VariableNames',names);
 
 for i = id1:1:id2
@@ -105,7 +105,7 @@ y2 = y2 / sum(y2);
 % Display the histograms
 figure(2); hold on; grid on;
 plot(x1,y1,'r',x2,y2,'b');
-xlabel("Standard deviation of chin-EMG (logarithmic compression)");
+xlabel("Standard deviation of chin-EMG (log scale)");
 ylabel("probability");
 title("Histogram of EMG standard deviation");
 legend("Sleep stage W", "Sleep stages R,N1,N2 and N3");
@@ -149,3 +149,24 @@ xlabel("ECB2, log scale");
 ylabel("probability");
 title("Histogram of ECB for 2nd EOG channel");
 legend("REM", "NREM");
+
+% ----------------------------------------------------------------
+
+% Histogram of EMG peak-to-peak voltage (Sleep stage W)
+data = features{~isAsleep,"VppEMG"}; data = log10(data);
+[y1, x1] = hist(data, nbins);
+y1 = y1 / sum(y1);
+
+% Histogram of EMG peak-to-peak voltage (Sleep stages R, N1, N2 and N3)
+data = features{isAsleep,"VppEMG"}; data = log10(data);
+[y2, x2] = hist(data, nbins);
+y2 = y2 / sum(y2);
+
+% Display the histograms
+figure(5); hold on; grid on;
+plot(x1,y1,'r',x2,y2,'b');
+xlabel("Peak-to-peak voltage of chin-EMG (log scale)");
+ylabel("probability");
+title("Histogram of EMG standard deviation");
+legend("Sleep stage W", "Sleep stages R,N1,N2 and N3");
+
