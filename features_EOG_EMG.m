@@ -33,15 +33,16 @@
 % The 4th column contains the standard deviation of the chin-EMG.
 % Small values indicate muscle relaxiation and loss of consciousness,
 % whereas large values indicate wakefulness and alertness.
-% The 5th column contains the sleep stage Annotations.
+% The 5th column contains the peak-to-peak voltage of the EMG 
+% recordings.
+% The 6th column contains the sleep stage Annotations.
 %
 % useDWT: (boolean) by setting useDWT to true, the discrete wavelet
-% transform is used to decompose the EOG and EMG signals into five 
-% frequency scales. The standard deviation of the EMG and the
-% cross-correlation of the EOG channels are estimated by using the 
-% DWT coefficients of the 0Hz-4Hz frequency scale. This method 
-% can lead to better results because it removes high-frequency noise. 
-% The estimation of the ECB values is not affected by useDWT.
+% transform is used to decompose the EOG signals into five 
+% frequency scales. The cross-correlation of the EOG channels is
+% estimated by using the DWT coefficients of the 0Hz-4Hz frequency 
+% scale. This method can lead to better results because it 
+% removes high-frequency noise.
 % -------------------------------------------------------------------
 
 function [features] = features_EOG_EMG(X, useDWT)
@@ -56,6 +57,7 @@ function [features] = features_EOG_EMG(X, useDWT)
         "double",           ...
         "double",           ...
         "double",           ...
+        "double",           ...
         "string"];
     
     names = [               ...
@@ -63,10 +65,11 @@ function [features] = features_EOG_EMG(X, useDWT)
         "ECB1",             ...         % ECB (1st EOG channel)
         "ECB2",             ...         % ECB (2nd EOG channel)
         "stdEMG",           ...         % chin-EMG standard deviation
+        "VppEMG",           ...         % chin-EMG peak to peak voltage
         "Annotations"];                 % sleep stage Annotations
     
     features = table(               ...
-        'Size',             [N 5],  ...
+        'Size',             [N 6],  ...
         'VariableTypes',    types,  ...
         'VariableNames',    names);
 
@@ -105,17 +108,18 @@ function [features] = features_EOG_EMG(X, useDWT)
             % wavelet decomposition
             [x, lx] = wavedec(x, 5, 'db5');
             [y, ly] = wavedec(y, 5, 'db5');
-            [z, lz] = wavedec(z, 5, 'db5');
 
             % DWT approximation
             % coefficients (0Hz-4Hz)
             x = appcoef(x, lx, 'db5', 5);
             y = appcoef(y, ly, 'db5', 5);
-            z = appcoef(z, lz, 'db5', 5);
         end
 
         % EMG standard deviation
         features{i,"stdEMG"} = std(z);
+
+        % EMG peak-to-peak voltage
+        features{i,"VppEMG"} = max(z) - min(z);
 
         % EOG cross-correlation
         mx = mean(x); sx = std(x);
