@@ -47,21 +47,8 @@ function [delta, theta, alpha, beta] = bicoherFeatures(X,freq)
     % alpha: features from alpha waves
     % beta:  features from beta waves
 
-    types = [           ...
-        "double",       ...
-        "double",       ...
-        "double",       ...
-        "double",       ...
-        "double",       ...
-        "string"];
-
-    names = [           ...
-        "ent",          ...     % entropy
-        "entsqr",       ...     % squared entropy
-        "logsum",       ...     % sum of logarithmic bicoherence
-        "logsumdiag",   ...     % diagonal sum of logarithmic bicoherence
-        "logmoment",    ...     % 1st order spectral moment of main diagonal
-        "Annotations"];
+    types = ["double","double","double","double","double","string"];
+    names = ["ent","entsqr","logsum","logsumdiag","logmoment","Annotations"];
 
     delta = table(                  ...
         'Size',          [N 5],     ...
@@ -98,37 +85,61 @@ function [delta, theta, alpha, beta] = bicoherFeatures(X,freq)
         bic = cell2mat(X{i,1});
 
         % Partition the bicoherence / bispectrum matrix
-        deltaBicoher = bic(deltaMask);
-        thetaBicoher = bic(thetaMask);
-        alphaBicoher = bic(alphaMask);
-        betaBicoher  = bic(betaMask);
+        deltabic = bic(deltaMask);
+        thetabic = bic(thetaMask);
+        alphabic = bic(alphaMask);
+        betabic  = bic(betaMask);
         
-        % TODO: feature extraction from delta waves
-        delta{i,"ent"}        = nan;
-        delta{i,"entsqr"}     = nan;
-        delta{i,"logsum"}     = nan;
+        % feature extraction from delta waves
+        p = deltabic / sum(deltabic);
+        deltabic{i,"ent"} = -nansum(p.*log(p)) / numel(p);
+        
+        p = deltabic .^ 2; p = p / sum(p);
+        delta{i,"entsqr"} = -sum(p.*log(p)) / numel(p);
+        
+        delta{i,"logsum"} = mean(log(abs(deltabic)));
+        
         delta{i,"logsumdiag"} = nan;
+        
         delta{i,"logmoment"}  = nan;
 
-        % TODO: feature extraction from theta waves
-        theta{i,"ent"}        = nan;
-        theta{i,"entsqr"}     = nan;
-        theta{i,"logsum"}     = nan;
+        % feature extraction from theta waves
+        p = thetabic / sum(thetabic);
+        theta{i,"ent"} = -nansum(p.*log(p)) / numel(p);
+        
+        p = thetabic .^ 2; p = p / sum(p);
+        theta{i,"entsqr"} = -nansum(p.*log(p)) / numel(p);
+        
+        theta{i,"logsum"} = mean(log(abs(thetabic)));
+        
         theta{i,"logsumdiag"} = nan;
+        
         theta{i,"logmoment"}  = nan;
 
-        % TODO: feature extraction from alpha waves
-        alpha{i,"ent"}        = nan;
-        alpha{i,"entsqr"}     = nan;
-        alpha{i,"logsum"}     = nan;
+        % feature extraction from alpha waves
+        p = alphabic / sum(alphabic);
+        alpha{i,"ent"} = -nansum(p.*log(p)) / numel(p);
+        
+        p = alphabic .^ 2; p = p / sum(p);
+        alpha{i,"entsqr"} = -nansum(p.*log(p)) / numel(p);
+        
+        alpha{i,"logsum"} = mean(log(abs(alphabic)));
+        
         alpha{i,"logsumdiag"} = nan;
+        
         alpha{i,"logmoment"}  = nan;
 
-        % TODO: feature extraction from beta  waves
-        beta{i,"ent"}        = nan;
-        beta{i,"entsqr"}     = nan;
-        beta{i,"logsum"}     = nan;
+        % feature extraction from beta  waves
+        p = betabic / sum(betabic);
+        beta{i,"ent"} = -nansum(p.*log(p)) / numel(p);
+        
+        p = betabic .^ 2; p = p / sum(p);
+        beta{i,"entsqr"} = -nansum(p.*log(p)) / numel(p);
+        
+        beta{i,"logsum"} = mean(log(abs(betabic)));
+        
         beta{i,"logsumdiag"} = nan;
+        
         beta{i,"logmoment"}  = nan;
     end
 
