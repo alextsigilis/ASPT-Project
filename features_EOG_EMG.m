@@ -82,8 +82,9 @@ function [features] = features_EOG_EMG(X, useDWT)
     % f:   (1D array) frequency axis of EOG power spectrum
     % idx: (1D array) vector of indices for frequencies 
     %       between 0.1Hz and 1.0Hz from the EOG power spectra.
-    idx = 4:1:31;
     
+    % idx = 4:1:31;
+    idx = 11:1:127;
     % ------------------------------------------------------- 
     % T = 30; fs = 256; M = fs * T;
     % f = (-fs/2):(fs/M):(+fs/2-fs/M); f = ifftshift(f);
