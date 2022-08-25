@@ -64,109 +64,130 @@ isNREM =                                                ...
     (features{:,"Annotations"} == "Sleep stage N2") |   ...
     (features{:,"Annotations"} == "Sleep stage N3");
 
-isAsleep = isREM | isNREM;
-
-% isREM    = features{:,"Annotations"} == "Sleep stage R";
-% isAsleep = features{:,"Annotations"} ~= "Sleep stage W";
-% isNREM1  = features{:,"Annotations"} == "Sleep stage N1";
-% isNREM2  = features{:,"Annotations"} == "Sleep stage N2";
-% isNREM3  = features{:,"Annotations"} == "Sleep stage N3";
+isAwake = features{:,"Annotations"} == "Sleep stage W";
 
 % ----------------------------------------------------------------
 
 % Histogram of cross-correlation for REM sleep
-[y1, x1] = hist(features{isREM, "xcorr"}, nbins);
+data = features{isREM, "xcorr"};
+[y1, x1] = hist(data, nbins);
 y1 = y1 / sum(y1);
 
 % Histogram of cross-correlation for NREM sleep 
-[y2, x2] = hist(features{isNREM, "xcorr"}, nbins);
+data = features{isNREM, "xcorr"};
+[y2, x2] = hist(data, nbins);
 y2 = y2 / sum(y2);
+
+% Histogram of cross-correlation for Sleep stage W
+data = features{isAwake, "xcorr"};
+[y3, x3] = hist(data, nbins);
+y3 = y3 / sum(y3);
 
 % Display the histograms
 figure(1); hold on; grid on;
-plot(x1,y1,'r',x2,y2,'b');
+plot(x1,y1,'r',x2,y2,'b',x3,y3,'k');
 xlabel("EOG cross-correlation coefficients");
 ylabel("probability");
 title("Histogram of EOG cross-correlation");
-legend("REM","Non-REM");
+legend("REM","Non-REM","Awake");
 
 % ----------------------------------------------------------------
 
-% Histogram of EMG variance for Sleep stage W
-data = features{~isAsleep,"stdEMG"}; data = log10(1 + data);
+% Histogram of EMG variance for Sleep stage R
+data = features{isREM,"stdEMG"}; data = log10(1 + data);
 [y1, x1] = hist(data, nbins);
 y1 = y1 / sum(y1);
 
-% Histogram of EMG variance for Sleep stages R, N1, N2 and N3
-data = features{isAsleep,"stdEMG"}; data = log10(1 + data);
+% Histogram of EMG variance for Sleep stages N1, N2 and N3
+data = features{isNREM,"stdEMG"}; data = log10(1 + data);
 [y2, x2] = hist(data, nbins);
 y2 = y2 / sum(y2);
+
+% Histogram of EMG variance for Sleep stage W
+data = features{isAwake,"stdEMG"}; data = log10(1 + data);
+[y3, x3] = hist(data, nbins);
+y3 = y3 / sum(y3);
 
 % Display the histograms
 figure(2); hold on; grid on;
-plot(x1,y1,'r',x2,y2,'b');
+plot(x1,y1,'r',x2,y2,'b',x3,y3,'k');
 xlabel("Standard deviation of chin-EMG (log scale)");
 ylabel("probability");
 title("Histogram of EMG standard deviation");
-legend("Sleep stage W", "Sleep stages R,N1,N2 and N3");
+legend("REM","Non-REM","Awake");
 
 % ----------------------------------------------------------------
 
-% Histogram of ECB1 for Sleep stage W
-data = features{~isAsleep,"ECB1"}; data = log10(data);
+% Histogram of ECB1 for Sleep stage R
+data = features{isREM,"ECB1"}; data = log10(data);
 [y1, x1] = hist(data, nbins);
 y1 = y1 / sum(y1);
 
-% Histogram of ECB1 for Sleep stages R, N1, N2 and N3
-data = features{isAsleep,"ECB1"}; data = log10(data);
+% Histogram of ECB1 for Sleep stages N1, N2 and N3
+data = features{isNREM,"ECB1"}; data = log10(data);
 [y2, x2] = hist(data, nbins);
 y2 = y2 / sum(y2);
+
+% Histogram of ECB1 for Sleep stage W
+data = features{isAwake,"ECB1"}; data = log10(data);
+[y3, x3] = hist(data, nbins);
+y3 = y3 / sum(y3);
 
 % Display the histograms
 figure(3); hold on; grid on;
-plot(x1,y1,'r',x2,y2,'b');
+plot(x1,y1,'r',x2,y2,'b',x3,y3,'k');
 xlabel("ECB1, log scale");
 ylabel("probability");
 title("Histogram of ECB for 1st EOG channel");
-legend("REM", "NREM");
+legend("REM", "NREM", "Awake");
 
 % ----------------------------------------------------------------
 
-% Histogram of ECB2 for Sleep stage W
-data = features{~isAsleep,"ECB2"}; data = log10(data);
+% Histogram of ECB2 for Sleep stage R
+data = features{isREM,"ECB2"}; data = log10(data);
 [y1, x1] = hist(data, nbins);
 y1 = y1 / sum(y1);
 
-% Histogram of ECB2 for Sleep stages R, N1, N2 and N3
-data = features{isAsleep, "ECB2"}; data = log10(data);
+% Histogram of ECB2 for Sleep stages N1, N2 and N3
+data = features{isNREM, "ECB2"}; data = log10(data);
 [y2, x2] = hist(data, nbins);
 y2 = y2 / sum(y2);
+
+% Histogram of ECB2 for Sleep stage W
+data = features{isAwake,"ECB2"}; data = log10(data);
+[y3, x3] = hist(data, nbins);
+y3 = y3 / sum(y3);
 
 % Display the histograms
 figure(4); hold on; grid on;
-plot(x1,y1,'r',x2,y2,'b');
+plot(x1,y1,'r',x2,y2,'b',x3,y3,'k');
 xlabel("ECB2, log scale");
 ylabel("probability");
 title("Histogram of ECB for 2nd EOG channel");
-legend("REM", "NREM");
+legend("REM", "NREM", "Awake");
 
 % ----------------------------------------------------------------
 
-% Histogram of EMG peak-to-peak voltage (Sleep stage W)
-data = features{~isAsleep,"VppEMG"}; data = log10(data);
+% Histogram of EMG peak-to-peak voltage for Sleep stage R
+data = features{isREM,"VppEMG"}; data = log10(data);
 [y1, x1] = hist(data, nbins);
 y1 = y1 / sum(y1);
 
-% Histogram of EMG peak-to-peak voltage (Sleep stages R, N1, N2 and N3)
-data = features{isAsleep,"VppEMG"}; data = log10(data);
+% Histogram of EMG peak-to-peak voltage for Sleep stages N1, N2 and N3
+data = features{isNREM,"VppEMG"}; data = log10(data);
 [y2, x2] = hist(data, nbins);
 y2 = y2 / sum(y2);
 
+% Histogram of EMG peak-to-peak voltage for Sleep stage W
+data = features{isAwake,"VppEMG"}; data = log10(data);
+[y3, x3] = hist(data, nbins);
+y3 = y3 / sum(y3);
+
 % Display the histograms
 figure(5); hold on; grid on;
-plot(x1,y1,'r',x2,y2,'b');
+plot(x1,y1,'r',x2,y2,'b',x3,y3,'k');
 xlabel("Peak-to-peak voltage of chin-EMG (log scale)");
 ylabel("probability");
-title("Histogram of EMG standard deviation");
-legend("Sleep stage W", "Sleep stages R,N1,N2 and N3");
+title("Histogram of EMG peak-to-peak voltage");
+legend("REM", "NREM", "Awake");
 

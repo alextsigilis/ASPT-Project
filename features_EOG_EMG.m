@@ -123,9 +123,10 @@ function [features] = features_EOG_EMG(X, useDWT)
         features{i,"VppEMG"} = max(z) - min(z);
 
         % EOG cross-correlation
+        epsilon = 1e-4;              % numerical stability
         mx = mean(x); sx = std(x);
         my = mean(y); sy = std(y);
         mxy = mean(x.*y); 
-        features{i,"xcorr"} = (mxy-mx*my)/(sx*sy);
+        features{i,"xcorr"} = (mxy-mx*my)/(sx*sy+epsilon);
     end
 end
