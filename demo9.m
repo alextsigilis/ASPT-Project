@@ -42,7 +42,7 @@ Z = loadEDF(patient_ID);
 fprintf("Done\n"); toc;
 
 fprintf("Estimating bicoherence index ... "); tic;
-[bic, freq] = bicEEG(Z,fs,fc,K,channel_ID);
+[bic, freq] = bicEEG(Z,K,fs,fc,channel_ID);
 fprintf("Done\n"); toc;
 
 % =============================================================
