@@ -18,7 +18,10 @@ start = 1;                      % first patient
 stop = 50;                      % last patient
 
 % Plot settings
-nbins = 50;                     % Number of histogram bins
+nbins = 100;                    % Number of histogram bins
+norm = "pdf";                   % Normalization type for histograms:
+                                % cdf => cumulative distribution 
+                                % pdf => probability density function
 
 % ---------------- Do not change anything below ---------------------
 
@@ -58,40 +61,79 @@ N2 = Y.Annotations == "Sleep stage N2";
 N3 = Y.Annotations == "Sleep stage N3";
 
 % histograms of bicoherence entropy
-[y1,x1] = hist(Y{W,"ent1"},nbins);   y1 = y1 / sum(y1);
-[y2,x2] = hist(Y{R,"ent1"},nbins);   y2 = y2 / sum(y2);
-[y3,x3] = hist(Y{N1,"ent1"},nbins);  y3 = y3 / sum(y3);
-[y4,x4] = hist(Y{N2,"ent1"},nbins);  y4 = y4 / sum(y4);
-[y5,x5] = hist(Y{N3,"ent1"},nbins);  y5 = y5 / sum(y5);
+z1 = Y{W, "ent1"};
+z2 = Y{R, "ent1"};
+z3 = Y{N1,"ent1"};
+z4 = Y{N2,"ent1"};
+z5 = Y{N3,"ent1"};
 
-figure(1); grid on;
-plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
+figure(1); hold on; grid on;
+histogram(z1,'DisplayStyle','stairs','Normalization',norm);
+histogram(z2,'DisplayStyle','stairs','Normalization',norm);
+histogram(z3,'DisplayStyle','stairs','Normalization',norm);
+histogram(z4,'DisplayStyle','stairs','Normalization',norm);
+histogram(z5,'DisplayStyle','stairs','Normalization',norm);
 xlabel("bicoherence entropy");
 ylabel("probability");
-legend("W", "R", "N1", "N2", "N3");
+legend("W","R","N1","N2","N3");
+
+fprintf("Statistics for bicoherence entropy:\n");
+fprintf("-------------------------------------------\n");
+fprintf("stage W  => mean: %.4f std: %.4f\n", mean(z1), std(z1));
+fprintf("stage R  => mean: %.4f std: %.4f\n", mean(z2), std(z2));
+fprintf("stage N1 => mean: %.4f std: %.4f\n", mean(z3), std(z3));
+fprintf("stage N2 => mean: %.4f std: %.4f\n", mean(z4), std(z4));
+fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
+fprintf("\n");
 
 % histogram of bicoherence squared-entropy
-[y1,x1] = hist(Y{W,"ent2"},nbins);   y1 = y1 / sum(y1);
-[y2,x2] = hist(Y{R,"ent2"},nbins);   y2 = y2 / sum(y2);
-[y3,x3] = hist(Y{N1,"ent2"},nbins);  y3 = y3 / sum(y3);
-[y4,x4] = hist(Y{N2,"ent2"},nbins);  y4 = y4 / sum(y4);
-[y5,x5] = hist(Y{N3,"ent2"},nbins);  y5 = y5 / sum(y5);
+z1 = Y{W, "ent2"};  
+z2 = Y{R, "ent2"}; 
+z3 = Y{N1,"ent2"};  
+z4 = Y{N2,"ent2"}; 
+z5 = Y{N3,"ent2"};  
 
-figure(2); grid on;
-plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
-xlabel("bicoherence squared entropy");
+figure(2); hold on; grid on;
+histogram(z1,'DisplayStyle','stairs','Normalization',norm);
+histogram(z2,'DisplayStyle','stairs','Normalization',norm);
+histogram(z3,'DisplayStyle','stairs','Normalization',norm);
+histogram(z4,'DisplayStyle','stairs','Normalization',norm);
+histogram(z5,'DisplayStyle','stairs','Normalization',norm);
+xlabel("bicoherence squared-entropy");
 ylabel("probability");
-legend("W", "R", "N1", "N2", "N3");
+legend("W","R","N1","N2","N3");
+
+fprintf("Statistics for bicoherence squared-entropy:\n");
+fprintf("-------------------------------------------\n");
+fprintf("stage W  => mean: %.4f std: %.4f\n", mean(z1), std(z1));
+fprintf("stage R  => mean: %.4f std: %.4f\n", mean(z2), std(z2));
+fprintf("stage N1 => mean: %.4f std: %.4f\n", mean(z3), std(z3));
+fprintf("stage N2 => mean: %.4f std: %.4f\n", mean(z4), std(z4));
+fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
+fprintf("\n");
 
 % histograms of bicoherence cubic-entropy
-[y1,x1] = hist(Y{W,"ent3"},nbins);   y1 = y1 / sum(y1);
-[y2,x2] = hist(Y{R,"ent3"},nbins);   y2 = y2 / sum(y2);
-[y3,x3] = hist(Y{N1,"ent3"},nbins);  y3 = y3 / sum(y3);
-[y4,x4] = hist(Y{N2,"ent3"},nbins);  y4 = y4 / sum(y4);
-[y5,x5] = hist(Y{N3,"ent3"},nbins);  y5 = y5 / sum(y5);
+z1 = Y{W, "ent3"};  
+z2 = Y{R, "ent3"};  
+z3 = Y{N1,"ent3"};  
+z4 = Y{N2,"ent3"}; 
+z5 = Y{N3,"ent3"}; 
 
-figure(3); grid on;
-plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
-xlabel("bicoherence cubed entropy");
+figure(3); hold on; grid on;
+histogram(z1,'DisplayStyle','stairs','Normalization',norm);
+histogram(z2,'DisplayStyle','stairs','Normalization',norm);
+histogram(z3,'DisplayStyle','stairs','Normalization',norm);
+histogram(z4,'DisplayStyle','stairs','Normalization',norm);
+histogram(z5,'DisplayStyle','stairs','Normalization',norm);
+xlabel("bicoherence cubic-entropy");
 ylabel("probability");
-legend("W", "R", "N1", "N2", "N3");
+legend("W","R","N1","N2","N3");
+
+fprintf("Statistics for bicoherence cubic-entropy:\n");
+fprintf("-------------------------------------------\n");
+fprintf("stage W  => mean: %.4f std: %.4f\n", mean(z1), std(z1));
+fprintf("stage R  => mean: %.4f std: %.4f\n", mean(z2), std(z2));
+fprintf("stage N1 => mean: %.4f std: %.4f\n", mean(z3), std(z3));
+fprintf("stage N2 => mean: %.4f std: %.4f\n", mean(z4), std(z4));
+fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
+fprintf("\n");
