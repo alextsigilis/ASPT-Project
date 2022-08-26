@@ -60,7 +60,7 @@
 % 
 % ===================================================================
 
-function [bic, freq] = bicEEG(X, fs, fc, K, channel)
+function [bic, freq] = bicEEG(X, K, fs, fc, channel)
 
     % ---------------------------------------------------------------
     % Parameter Checks
