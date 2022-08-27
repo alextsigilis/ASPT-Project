@@ -166,7 +166,7 @@ function [bis, freq] = bisEEG (X, K, fs, fc, channel)
             % y: (1D array) a partition of x
             % Y: (1D array) the FFT of y
             y = x(ind);                                             
-            Y = fft(y-mean(y)) / M;
+            Y = fft((y-mean(y))/std(y)) / M;
             
             % Discard any frequencies above +fc and below -fc 
             % by truncating the result of the previous FFT

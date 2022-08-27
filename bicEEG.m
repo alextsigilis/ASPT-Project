@@ -12,12 +12,12 @@
 % Many methods have been used to normalize the bispectrum 
 % This function uses the one proposed by Nagashima, 2006:
 % 
-%                 <|F(f1)F(f2)F'(f1+f2)|^2>      
+%                 E{|F(f1)F(f2)F'(f1+f2)|^2}      
 % b(f1,f2) = ------------------------------------
-%              <|F(f1)F(f2)|^2> <|F'(f1+f2)|^2>
+%             E{|F(f1)F(f2)|^2} E{|F'(f1+f2)|^2}
 %
 % where:
-%   1) the angled brackets <> denote averaging across all segments
+%   1) E{*} denotes mathematical expectation
 %   2) the apostrophe ' denotes complex conjugation
 %   3) F is the FFT of an EEG segment
 %   4) b is the bicoherence index
@@ -149,7 +149,7 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel)
 
             % Subtract the mean and
             % apply the hanning window
-    	    y = (y(:) - mean(y)) .* win;
+    	    y = ((y(:) - mean(y))/std(y)) .* win;
 
             % Estimate the FFT of the segment
             % and discard unnecessary frequencies
@@ -172,7 +172,8 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel)
         end
 
         % Normalize the bispectrum to obtain the bicoherence
-        b = (abs(b) .^ 2) ./ (P12 .* P3);
+        epsilon = 1e-5;
+        b = (abs(b) .^ 2) ./ (P12 .* P3 + epsilon);
         
         % Shift the elements of the bicoherence matrix,
         % remove any artifacts outside the symmetry regions
