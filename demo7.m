@@ -36,8 +36,10 @@ fc = 4;
 
 % levels: (integer) number of levels for contour plots
 % dt: (integer) playback speed in seconds per frame
+% cmap: (string) colormap for contour plots (either "turbo" or "parula")
 levels = 16;
 dt = 1.0;
+cmap = "turbo";
 
 % ===================================================================
 % 2) Estimate the Bispectra
@@ -51,8 +53,6 @@ fprintf("Estimating bispectra ... "); tic;
 [bis, freq] = bisEEG(X,K,fs,fc,channel_ID);
 fprintf("Done\n"); toc;
 
-clear X;
-
 % ===================================================================
 % 3) Plot the bispectra. Pause for a few seconds between each plot
 % ===================================================================
@@ -62,8 +62,13 @@ pause('on');
 N = size(bis,1); 
 
 for i = 1:1:N
+    subplot(2,1,1);
     contourf(freq,freq,abs(cell2mat(bis{i,1})),levels,'LineColor','none');
     txt = sprintf("frame %d out of %d: %s",i,N,bis.Annotations{i});
+    colormap(cmap); colorbar;
     xlabel("f_1"); ylabel("f_2"); title(txt);
+    subplot(2,1,2);
+    plot(cell2mat(X{i,channel_ID}));
+    xlabel('samples'); ylabel('Amplitude');
     pause(dt);
 end

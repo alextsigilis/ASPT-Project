@@ -54,9 +54,13 @@ pause('on');
 
 for i = 1:1:N
     b = cell2mat(bic{i,1});
+    subplot(2,1,1);
     contourf(freq,freq,b,levels,'LineColor','none');
     txt = sprintf("frame %d out of %d: %s",i,N,bic.Annotations{i});
     xlabel('f_1'); ylabel('f_2'); title(txt);
     caxis([0.0 1.0]); colormap(cmap); colorbar;
+    subplot(2,1,2);
+    plot(cell2mat(Z{i,1}));
+    xlabel('samples'); ylabel('Voltage');
     pause(dt);
 end
