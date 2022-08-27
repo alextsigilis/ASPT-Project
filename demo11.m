@@ -19,9 +19,6 @@ stop = 50;                      % last patient
 
 % Plot settings
 nbins = 100;                    % Number of histogram bins
-norm = "pdf";                   % Normalization type for histograms:
-                                % cdf => cumulative distribution 
-                                % pdf => probability density function
 
 % ---------------- Do not change anything below ---------------------
 
@@ -68,11 +65,12 @@ z4 = Y{N2,"ent1"};
 z5 = Y{N3,"ent1"};
 
 figure(1); hold on; grid on;
-histogram(z1,'DisplayStyle','stairs','Normalization',norm);
-histogram(z2,'DisplayStyle','stairs','Normalization',norm);
-histogram(z3,'DisplayStyle','stairs','Normalization',norm);
-histogram(z4,'DisplayStyle','stairs','Normalization',norm);
-histogram(z5,'DisplayStyle','stairs','Normalization',norm);
+[y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
+[y2,x2] = hist(z2,nbins); y2 = y2 / numel(z2);
+[y3,x3] = hist(z3,nbins); y3 = y3 / numel(z3);
+[y4,x4] = hist(z4,nbins); y4 = y4 / numel(z4);
+[y5,x5] = hist(z5,nbins); y5 = y5 / numel(z5);
+plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
 xlabel("bispectral entropy");
 ylabel("probability");
 legend("W","R","N1","N2","N3");
@@ -94,11 +92,12 @@ z4 = Y{N2,"ent2"};
 z5 = Y{N3,"ent2"};  
 
 figure(2); hold on; grid on;
-histogram(z1,'DisplayStyle','stairs','Normalization',norm);
-histogram(z2,'DisplayStyle','stairs','Normalization',norm);
-histogram(z3,'DisplayStyle','stairs','Normalization',norm);
-histogram(z4,'DisplayStyle','stairs','Normalization',norm);
-histogram(z5,'DisplayStyle','stairs','Normalization',norm);
+[y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
+[y2,x2] = hist(z2,nbins); y2 = y2 / numel(z2);
+[y3,x3] = hist(z3,nbins); y3 = y3 / numel(z3);
+[y4,x4] = hist(z4,nbins); y4 = y4 / numel(z4);
+[y5,x5] = hist(z5,nbins); y5 = y5 / numel(z5);
+plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
 xlabel("bispectral squared-entropy");
 ylabel("probability");
 legend("W","R","N1","N2","N3");
@@ -120,11 +119,12 @@ z4 = Y{N2,"ent3"};
 z5 = Y{N3,"ent3"}; 
 
 figure(3); hold on; grid on;
-histogram(z1,'DisplayStyle','stairs','Normalization',norm);
-histogram(z2,'DisplayStyle','stairs','Normalization',norm);
-histogram(z3,'DisplayStyle','stairs','Normalization',norm);
-histogram(z4,'DisplayStyle','stairs','Normalization',norm);
-histogram(z5,'DisplayStyle','stairs','Normalization',norm);
+[y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
+[y2,x2] = hist(z2,nbins); y2 = y2 / numel(z2);
+[y3,x3] = hist(z3,nbins); y3 = y3 / numel(z3);
+[y4,x4] = hist(z4,nbins); y4 = y4 / numel(z4);
+[y5,x5] = hist(z5,nbins); y5 = y5 / numel(z5);
+plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
 xlabel("bispectral cubic-entropy");
 ylabel("probability");
 legend("W","R","N1","N2","N3");
@@ -146,11 +146,12 @@ z4 = Y{N2,"H1"};
 z5 = Y{N3,"H1"}; 
 
 figure(4); hold on; grid on;
-histogram(z1,'DisplayStyle','stairs','Normalization',norm);
-histogram(z2,'DisplayStyle','stairs','Normalization',norm);
-histogram(z3,'DisplayStyle','stairs','Normalization',norm);
-histogram(z4,'DisplayStyle','stairs','Normalization',norm);
-histogram(z5,'DisplayStyle','stairs','Normalization',norm);
+[y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
+[y2,x2] = hist(z2,nbins); y2 = y2 / numel(z2);
+[y3,x3] = hist(z3,nbins); y3 = y3 / numel(z3);
+[y4,x4] = hist(z4,nbins); y4 = y4 / numel(z4);
+[y5,x5] = hist(z5,nbins); y5 = y5 / numel(z5);
+plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
 xlabel("bispectral log-average");
 ylabel("probability");
 legend("W","R","N1","N2","N3");
@@ -172,11 +173,12 @@ z4 = Y{N2,"H2"};
 z5 = Y{N3,"H2"}; 
 
 figure(5); hold on; grid on;
-histogram(z1,'DisplayStyle','stairs','Normalization',norm);
-histogram(z2,'DisplayStyle','stairs','Normalization',norm);
-histogram(z3,'DisplayStyle','stairs','Normalization',norm);
-histogram(z4,'DisplayStyle','stairs','Normalization',norm);
-histogram(z5,'DisplayStyle','stairs','Normalization',norm);
+[y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
+[y2,x2] = hist(z2,nbins); y2 = y2 / numel(z2);
+[y3,x3] = hist(z3,nbins); y3 = y3 / numel(z3);
+[y4,x4] = hist(z4,nbins); y4 = y4 / numel(z4);
+[y5,x5] = hist(z5,nbins); y5 = y5 / numel(z5);
+plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
 xlabel("bispectral diagonal log-average");
 ylabel("probability");
 legend("W","R","N1","N2","N3");
