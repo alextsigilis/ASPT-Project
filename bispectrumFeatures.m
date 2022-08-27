@@ -37,11 +37,18 @@ function [Y] = bispectrumFeatures(X)
         'VariableTypes', types,     ...
         'VariableNames', names);
 
+    % A small positive constant to ensure 
+    % numerical stability when performing 
+    % divisions.
+    epsilon = 1e-5;
+
     for i = 1:1:N
         % Extract the entire bispectrum
         % matrix for a 30sec EEG segment
+        % and normalize it
         bis = cell2mat(X{i,1}); 
-        bis = abs(bis);
+        bis = abs(bis); 
+        bis = bis / (max(bis(:)) + epsilon);
         
         % Estimate bispectrum entropies
         p = bis(:).^1; p = p / sum(p);
@@ -52,7 +59,6 @@ function [Y] = bispectrumFeatures(X)
         Y{i,"ent3"} = -sum(r.*log2(r),'omitnan');
 
         % Estimate bispectrum log averages
-        epsilon = 1e-5;
         Y{i,"H1"} = sum(log2(bis(:) + epsilon));
         Y{i,"H2"} = sum(log2(diag(flip(bis + epsilon))));
     end
