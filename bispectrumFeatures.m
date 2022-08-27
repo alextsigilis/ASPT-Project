@@ -52,7 +52,7 @@ function [Y] = bispectrumFeatures(X)
         Y{i,"ent3"} = -sum(r.*log2(r),'omitnan');
 
         % Estimate bispectrum log averages
-        epsilon = 1e-4;
+        epsilon = 1e-5;
         Y{i,"H1"} = sum(log2(bis(:) + epsilon));
         Y{i,"H2"} = sum(log2(diag(flip(bis + epsilon))));
     end
