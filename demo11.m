@@ -41,7 +41,7 @@ for i = start:stop
     fprintf("OK\n");
 
     fprintf("Estimating bispectrum matrix ... ");
-    [X,~] = bicEEG(Z,K,fs,fc,channel);
+    [X,~] = bisEEG(Z,K,fs,fc,channel);
     fprintf("OK\n");
 
     fprintf("Extracting bispectrum features ... ");
