@@ -142,6 +142,10 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel)
         % to extract EEG segments
         ind  = [1:M];
 
+        % A small positive constant to ensure numerical 
+        % stability when performing floating point divisions
+        epsilon = 1e-5;
+
         % Partial estimations for every sub-segment
         for j = 1:K
             % Extract a segment from x
@@ -149,7 +153,7 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel)
 
             % Subtract the mean and
             % apply the hanning window
-    	    y = ((y(:) - mean(y))/std(y)) .* win;
+    	    y = ((y(:) - mean(y))/(std(y) + epsilon)) .* win;
 
             % Estimate the FFT of the segment
             % and discard unnecessary frequencies
