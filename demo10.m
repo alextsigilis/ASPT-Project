@@ -25,11 +25,14 @@ norm = "pdf";                   % Normalization type for histograms:
 
 % ---------------- Do not change anything below ---------------------
 
-% Initialize an empty table to store bicoherence features
+% Initialize empty tables to store bicoherence features
 sz = [0 6];
 types = ["double" "double" "double" "double" "double" "string"];
-names = ["ent1" "ent2" "ent3" "H1" "H2" "Annotations"];
-Y = table('Size',sz,'VariableTypes',types,'VariableNames',names);
+names = ["ent1" "ent2" "ent3" "avg" "peak" "Annotations"];
+delta = table('Size',sz,'VariableTypes',types,'VariableNames',names);
+theta = table('Size',sz,'VariableTypes',types,'VariableNames',names);
+alpha = table('Size',sz,'VariableTypes',types,'VariableNames',names);
+beta  = table('Size',sz,'VariableTypes',types,'VariableNames',names);
 
 % Extract bicoherence features from every patient
 for i = start:stop
@@ -41,159 +44,142 @@ for i = start:stop
     fprintf("OK\n");
 
     fprintf("Estimating bicoherence matrix ... ");
-    [X,~] = bicEEG(Z,K,fs,fc,channel);
+    [X,f] = bicEEG(Z,K,fs,fc,channel);
     fprintf("OK\n");
 
     fprintf("Extracting bicoherence features ... ");
-    Y = [Y; bicoherFeatures(X)];
+    [D, U, A, B] = bicoherFeatures(X,f);
+    delta = [delta; D];
+    theta = [theta; U];
+    alpha = [alpha; A];
+    beta  = [beta;  B];
     fprintf("OK\n");
 
     fprintf("\n");
 end
 
-% ---------- Plot histograms of the bicoherence features ------------
+idx = 1;
 
-% Boolean masks to distinguish between the five sleep stages
-W  = Y.Annotations == "Sleep stage W";
-R  = Y.Annotations == "Sleep stage R";
-N1 = Y.Annotations == "Sleep stage N1";
-N2 = Y.Annotations == "Sleep stage N2";
-N3 = Y.Annotations == "Sleep stage N3";
+% --------------- Histograms for delta-wave features -----------------
 
-r = 99;
+W  = delta.Annotations == "Sleep stage W";
+R  = delta.Annotations == "Sleep stage R";
+N1 = delta.Annotations == "Sleep stage N1";
+N2 = delta.Annotations == "Sleep stage N2";
+N3 = delta.Annotations == "Sleep stage N3";
 
-% histograms of bicoherence entropy
-z1 = Y{W, "ent1"}; z1 = log10(1+r*z1);
-z2 = Y{R, "ent1"}; z2 = log10(1+r*z2);
-z3 = Y{N1,"ent1"}; z3 = log10(1+r*z3);
-z4 = Y{N2,"ent1"}; z4 = log10(1+r*z4);
-z5 = Y{N3,"ent1"}; z5 = log10(1+r*z5);
+K = size(delta,2) - 1;
 
-figure(1); hold on; grid on;
-[y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
-[y2,x2] = hist(z2,nbins); y2 = y2 / numel(z2);
-[y3,x3] = hist(z3,nbins); y3 = y3 / numel(z3);
-[y4,x4] = hist(z4,nbins); y4 = y4 / numel(z4);
-[y5,x5] = hist(z5,nbins); y5 = y5 / numel(z5);
-plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
-xlabel("bicoherence entropy (log scale)");
-ylabel("probability");
-legend("W","R","N1","N2","N3");
+for k = 1:K
+    z1 = delta{W,  k};
+    z2 = delta{R,  k};
+    z3 = delta{N1, k};
+    z4 = delta{N2, k};
+    z5 = delta{N3, k};
 
-fprintf("Statistics for bicoherence entropy:\n");
-fprintf("-------------------------------------------\n");
-fprintf("stage W  => mean: %.4f std: %.4f\n", mean(z1), std(z1));
-fprintf("stage R  => mean: %.4f std: %.4f\n", mean(z2), std(z2));
-fprintf("stage N1 => mean: %.4f std: %.4f\n", mean(z3), std(z3));
-fprintf("stage N2 => mean: %.4f std: %.4f\n", mean(z4), std(z4));
-fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
-fprintf("\n");
+    [y1, x1] = hist(z1,nbins); y1 = y1 / numel(z1);
+    [y2, x2] = hist(z2,nbins); y2 = y2 / numel(z2);
+    [y3, x3] = hist(z3,nbins); y3 = y3 / numel(z3);
+    [y4, x4] = hist(z4,nbins); y4 = y4 / numel(z4);
+    [y5, x5] = hist(z5,nbins); y5 = y5 / numel(z5);
 
-% histogram of bicoherence squared-entropy
-z1 = Y{W, "ent2"}; z1 = log10(1+r*z1);
-z2 = Y{R, "ent2"}; z2 = log10(1+r*z2);
-z3 = Y{N1,"ent2"}; z3 = log10(1+r*z3);
-z4 = Y{N2,"ent2"}; z4 = log10(1+r*z4);
-z5 = Y{N3,"ent2"}; z5 = log10(1+r*z5);
+    figure(idx); idx = idx + 1;
+    plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5); grid on;
+    xlabel(delta.Properties.VariableNames{k}); 
+    ylabel('Probability');
+    title('Delta waves');
+    legend("W", "R", "N1", "N2", "N3");
+end
 
-figure(2); hold on; grid on;
-[y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
-[y2,x2] = hist(z2,nbins); y2 = y2 / numel(z2);
-[y3,x3] = hist(z3,nbins); y3 = y3 / numel(z3);
-[y4,x4] = hist(z4,nbins); y4 = y4 / numel(z4);
-[y5,x5] = hist(z5,nbins); y5 = y5 / numel(z5);
-plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
-xlabel("bicoherence squared-entropy (log scale)");
-ylabel("probability");
-legend("W","R","N1","N2","N3");
+% --------------- Histograms for theta-wave features -----------------
 
-fprintf("Statistics for bicoherence squared-entropy:\n");
-fprintf("-------------------------------------------\n");
-fprintf("stage W  => mean: %.4f std: %.4f\n", mean(z1), std(z1));
-fprintf("stage R  => mean: %.4f std: %.4f\n", mean(z2), std(z2));
-fprintf("stage N1 => mean: %.4f std: %.4f\n", mean(z3), std(z3));
-fprintf("stage N2 => mean: %.4f std: %.4f\n", mean(z4), std(z4));
-fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
-fprintf("\n");
+W  = theta.Annotations == "Sleep stage W";
+R  = theta.Annotations == "Sleep stage R";
+N1 = theta.Annotations == "Sleep stage N1";
+N2 = theta.Annotations == "Sleep stage N2";
+N3 = theta.Annotations == "Sleep stage N3";
 
-% histograms of bicoherence cubic-entropy
-z1 = Y{W, "ent3"}; z1 = log10(1+r*z1);
-z2 = Y{R, "ent3"}; z2 = log10(1+r*z2);
-z3 = Y{N1,"ent3"}; z3 = log10(1+r*z3);
-z4 = Y{N2,"ent3"}; z4 = log10(1+r*z4);
-z5 = Y{N3,"ent3"}; z5 = log10(1+r*z5);
+K = size(theta,2) - 1;
 
-figure(3); hold on; grid on;
-[y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
-[y2,x2] = hist(z2,nbins); y2 = y2 / numel(z2);
-[y3,x3] = hist(z3,nbins); y3 = y3 / numel(z3);
-[y4,x4] = hist(z4,nbins); y4 = y4 / numel(z4);
-[y5,x5] = hist(z5,nbins); y5 = y5 / numel(z5);
-plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
-xlabel("bicoherence cubic-entropy (log scale)");
-ylabel("probability");
-legend("W","R","N1","N2","N3");
+for k = 1:K
+    z1 = theta{W,  k};
+    z2 = theta{R,  k};
+    z3 = theta{N1, k};
+    z4 = theta{N2, k};
+    z5 = theta{N3, k};
 
-fprintf("Statistics for bicoherence cubic-entropy:\n");
-fprintf("-------------------------------------------\n");
-fprintf("stage W  => mean: %.4f std: %.4f\n", mean(z1), std(z1));
-fprintf("stage R  => mean: %.4f std: %.4f\n", mean(z2), std(z2));
-fprintf("stage N1 => mean: %.4f std: %.4f\n", mean(z3), std(z3));
-fprintf("stage N2 => mean: %.4f std: %.4f\n", mean(z4), std(z4));
-fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
-fprintf("\n");
+    [y1, x1] = hist(z1,nbins); y1 = y1 / numel(z1);
+    [y2, x2] = hist(z2,nbins); y2 = y2 / numel(z2);
+    [y3, x3] = hist(z3,nbins); y3 = y3 / numel(z3);
+    [y4, x4] = hist(z4,nbins); y4 = y4 / numel(z4);
+    [y5, x5] = hist(z5,nbins); y5 = y5 / numel(z5);
 
-% histograms of average bicoherence
-z1 = Y{W, "H1"};
-z2 = Y{R, "H1"};
-z3 = Y{N1,"H1"};
-z4 = Y{N2,"H1"};
-z5 = Y{N3,"H1"};
+    figure(idx); idx = idx + 1;
+    plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5); grid on;
+    xlabel(theta.Properties.VariableNames{k}); 
+    ylabel('Probability');
+    title('theta waves');
+    legend("W", "R", "N1", "N2", "N3");
+end
 
-figure(4); hold on; grid on;
-[y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
-[y2,x2] = hist(z2,nbins); y2 = y2 / numel(z2);
-[y3,x3] = hist(z3,nbins); y3 = y3 / numel(z3);
-[y4,x4] = hist(z4,nbins); y4 = y4 / numel(z4);
-[y5,x5] = hist(z5,nbins); y5 = y5 / numel(z5);
-plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
-xlabel("average bicoherence");
-ylabel("probability");
-legend("W","R","N1","N2","N3");
+% --------------- Histograms for alpha-wave features -----------------
 
-fprintf("Statistics for average bicoherence:\n");
-fprintf("-------------------------------------------\n");
-fprintf("stage W  => mean: %.4f std: %.4f\n", mean(z1), std(z1));
-fprintf("stage R  => mean: %.4f std: %.4f\n", mean(z2), std(z2));
-fprintf("stage N1 => mean: %.4f std: %.4f\n", mean(z3), std(z3));
-fprintf("stage N2 => mean: %.4f std: %.4f\n", mean(z4), std(z4));
-fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
-fprintf("\n");
+W  = alpha.Annotations == "Sleep stage W";
+R  = alpha.Annotations == "Sleep stage R";
+N1 = alpha.Annotations == "Sleep stage N1";
+N2 = alpha.Annotations == "Sleep stage N2";
+N3 = alpha.Annotations == "Sleep stage N3";
 
-% histograms for diagonal average of bicoherence
-z1 = Y{W, "H2"};
-z2 = Y{R, "H2"};
-z3 = Y{N1,"H2"};
-z4 = Y{N2,"H2"};
-z5 = Y{N3,"H2"};
+K = size(alpha,2) - 1;
 
-figure(5); hold on; grid on;
-[y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
-[y2,x2] = hist(z2,nbins); y2 = y2 / numel(z2);
-[y3,x3] = hist(z3,nbins); y3 = y3 / numel(z3);
-[y4,x4] = hist(z4,nbins); y4 = y4 / numel(z4);
-[y5,x5] = hist(z5,nbins); y5 = y5 / numel(z5);
-plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
-xlabel("diagonal average of bicoherence");
-ylabel("probability");
-legend("W","R","N1","N2","N3");
+for k = 1:K
+    z1 = alpha{W,  k};
+    z2 = alpha{R,  k};
+    z3 = alpha{N1, k};
+    z4 = alpha{N2, k};
+    z5 = alpha{N3, k};
 
-fprintf("Statistics for diagonal average of bicoherence:\n");
-fprintf("-----------------------------------------------\n");
-fprintf("stage W  => mean: %.4f std: %.4f\n", mean(z1), std(z1));
-fprintf("stage R  => mean: %.4f std: %.4f\n", mean(z2), std(z2));
-fprintf("stage N1 => mean: %.4f std: %.4f\n", mean(z3), std(z3));
-fprintf("stage N2 => mean: %.4f std: %.4f\n", mean(z4), std(z4));
-fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
-fprintf("\n");
+    [y1, x1] = hist(z1,nbins); y1 = y1 / numel(z1);
+    [y2, x2] = hist(z2,nbins); y2 = y2 / numel(z2);
+    [y3, x3] = hist(z3,nbins); y3 = y3 / numel(z3);
+    [y4, x4] = hist(z4,nbins); y4 = y4 / numel(z4);
+    [y5, x5] = hist(z5,nbins); y5 = y5 / numel(z5);
 
+    figure(idx); idx = idx + 1;
+    plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5); grid on;
+    xlabel(alpha.Properties.VariableNames{k}); 
+    ylabel('Probability');
+    title('alpha waves');
+    legend("W", "R", "N1", "N2", "N3");
+end
+
+% --------------- Histograms for beta-wave features -----------------
+
+W  = beta.Annotations == "Sleep stage W";
+R  = beta.Annotations == "Sleep stage R";
+N1 = beta.Annotations == "Sleep stage N1";
+N2 = beta.Annotations == "Sleep stage N2";
+N3 = beta.Annotations == "Sleep stage N3";
+
+K = size(beta,2) - 1;
+
+for k = 1:K
+    z1 = beta{W,  k};
+    z2 = beta{R,  k};
+    z3 = beta{N1, k};
+    z4 = beta{N2, k};
+    z5 = beta{N3, k};
+
+    [y1, x1] = hist(z1,nbins); y1 = y1 / numel(z1);
+    [y2, x2] = hist(z2,nbins); y2 = y2 / numel(z2);
+    [y3, x3] = hist(z3,nbins); y3 = y3 / numel(z3);
+    [y4, x4] = hist(z4,nbins); y4 = y4 / numel(z4);
+    [y5, x5] = hist(z5,nbins); y5 = y5 / numel(z5);
+
+    figure(idx); idx = idx + 1;
+    plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5); grid on;
+    xlabel(beta.Properties.VariableNames{k}); 
+    ylabel('Probability');
+    title('beta waves');
+    legend("W", "R", "N1", "N2", "N3");
+end
