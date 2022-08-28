@@ -26,9 +26,9 @@ norm = "pdf";                   % Normalization type for histograms:
 % ---------------- Do not change anything below ---------------------
 
 % Initialize an empty table to store bicoherence features
-sz = [0 4];
-types = ["double" "double" "double" "string"];
-names = ["ent1" "ent2" "ent3" "Annotations"];
+sz = [0 6];
+types = ["double" "double" "double" "double" "double" "string"];
+names = ["ent1" "ent2" "ent3" "H1" "H2" "Annotations"];
 Y = table('Size',sz,'VariableTypes',types,'VariableNames',names);
 
 % Extract bicoherence features from every patient
@@ -142,3 +142,58 @@ fprintf("stage N1 => mean: %.4f std: %.4f\n", mean(z3), std(z3));
 fprintf("stage N2 => mean: %.4f std: %.4f\n", mean(z4), std(z4));
 fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
 fprintf("\n");
+
+% histograms of average bicoherence
+z1 = Y{W, "H1"};
+z2 = Y{R, "H1"};
+z3 = Y{N1,"H1"};
+z4 = Y{N2,"H1"};
+z5 = Y{N3,"H1"};
+
+figure(4); hold on; grid on;
+[y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
+[y2,x2] = hist(z2,nbins); y2 = y2 / numel(z2);
+[y3,x3] = hist(z3,nbins); y3 = y3 / numel(z3);
+[y4,x4] = hist(z4,nbins); y4 = y4 / numel(z4);
+[y5,x5] = hist(z5,nbins); y5 = y5 / numel(z5);
+plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
+xlabel("average bicoherence");
+ylabel("probability");
+legend("W","R","N1","N2","N3");
+
+fprintf("Statistics for average bicoherence:\n");
+fprintf("-------------------------------------------\n");
+fprintf("stage W  => mean: %.4f std: %.4f\n", mean(z1), std(z1));
+fprintf("stage R  => mean: %.4f std: %.4f\n", mean(z2), std(z2));
+fprintf("stage N1 => mean: %.4f std: %.4f\n", mean(z3), std(z3));
+fprintf("stage N2 => mean: %.4f std: %.4f\n", mean(z4), std(z4));
+fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
+fprintf("\n");
+
+% histograms for diagonal average of bicoherence
+z1 = Y{W, "H2"};
+z2 = Y{R, "H2"};
+z3 = Y{N1,"H2"};
+z4 = Y{N2,"H2"};
+z5 = Y{N3,"H2"};
+
+figure(5); hold on; grid on;
+[y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
+[y2,x2] = hist(z2,nbins); y2 = y2 / numel(z2);
+[y3,x3] = hist(z3,nbins); y3 = y3 / numel(z3);
+[y4,x4] = hist(z4,nbins); y4 = y4 / numel(z4);
+[y5,x5] = hist(z5,nbins); y5 = y5 / numel(z5);
+plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5);
+xlabel("diagonal average of bicoherence");
+ylabel("probability");
+legend("W","R","N1","N2","N3");
+
+fprintf("Statistics for diagonal average of bicoherence:\n");
+fprintf("-----------------------------------------------\n");
+fprintf("stage W  => mean: %.4f std: %.4f\n", mean(z1), std(z1));
+fprintf("stage R  => mean: %.4f std: %.4f\n", mean(z2), std(z2));
+fprintf("stage N1 => mean: %.4f std: %.4f\n", mean(z3), std(z3));
+fprintf("stage N2 => mean: %.4f std: %.4f\n", mean(z4), std(z4));
+fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
+fprintf("\n");
+

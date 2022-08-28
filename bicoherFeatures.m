@@ -7,8 +7,9 @@
 % This function can be used to extract features from the
 % bicoherence estimations of EEG signals such as:
 %   1) bicoherence entropy
-%   2) bicoherence squared entropy
-%   3) bicoherence cubed entropy
+%   2) bicoherence squared-entropy
+%   3) bicoherence cubed-entropy
+%   4) average bicoherence
 % -------------------------------------------------------
 %
 % Arguments List: (X, freq)
@@ -29,11 +30,24 @@ function [Y] = bicoherFeatures(X)
 
     % Initialize an empty table to store
     % features from the bicoherence matrices.
-    types = ["double", "double", "double", "string"];
-    names = ["ent1", "ent2", "ent3", "Annotations"];
+    types = [
+        "double",       ...
+        "double",       ...
+        "double",       ...
+        "double",       ...
+        "double",       ...
+        "string"];
+
+    names = [
+        "ent1",         ...
+        "ent2",         ...
+        "ent3",         ...
+        "H1",           ...
+        "H2",           ...
+        "Annotations"];
 
     Y = table(                      ...
-        'Size',          [N 4],     ...
+        'Size',          [N 6],     ...
         'VariableTypes', types,     ...
         'VariableNames', names);
 
@@ -49,6 +63,10 @@ function [Y] = bicoherFeatures(X)
         Y{i,"ent2"} = -sum(q(:).*log2(q(:)),'omitnan');
         r = bic(:).^3; 
         Y{i,"ent3"} = -sum(r(:).*log2(r(:)),'omitnan');
+
+        % Estimate average bicoherence
+        Y{i,"H1"} = mean(bic(:));
+        Y{i,"H2"} = mean(diag(flip(bic)));
     end
 
     % Copy sleep stage Annotations;
