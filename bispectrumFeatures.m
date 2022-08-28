@@ -48,14 +48,14 @@ function [Y] = bispectrumFeatures(X)
         % and normalize it
         bis = cell2mat(X{i,1}); 
         bis = abs(bis); 
-        bis = bis / (max(bis(:)) + epsilon);
+        b   = bis / (max(bis(:)) + epsilon);
         
         % Estimate bispectrum entropies
-        p = bis(:).^1; p = p / sum(p);
+        p = b(:).^1;
         Y{i,"ent1"} = -sum(p.*log2(p),'omitnan');
-        q = bis(:).^2; q = q / sum(q);
+        q = b(:).^2;
         Y{i,"ent2"} = -sum(q.*log2(q),'omitnan');
-        r = bis(:).^3; r = r / sum(r);
+        r = b(:).^3;
         Y{i,"ent3"} = -sum(r.*log2(r),'omitnan');
 
         % Estimate bispectrum log averages

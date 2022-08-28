@@ -85,11 +85,11 @@ fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
 fprintf("\n");
 
 % histogram of bispectral squared-entropy
-z1 = Y{W, "ent2"};  
-z2 = Y{R, "ent2"}; 
-z3 = Y{N1,"ent2"};  
+z1 = Y{W, "ent2"};
+z2 = Y{R, "ent2"};
+z3 = Y{N1,"ent2"};
 z4 = Y{N2,"ent2"}; 
-z5 = Y{N3,"ent2"};  
+z5 = Y{N3,"ent2"}; 
 
 figure(2); hold on; grid on;
 [y1,x1] = hist(z1,nbins); y1 = y1 / numel(z1);
@@ -112,9 +112,9 @@ fprintf("stage N3 => mean: %.4f std: %.4f\n", mean(z5), std(z5));
 fprintf("\n");
 
 % histograms of bispectral cubic-entropy
-z1 = Y{W, "ent3"};  
-z2 = Y{R, "ent3"};  
-z3 = Y{N1,"ent3"};  
+z1 = Y{W, "ent3"}; 
+z2 = Y{R, "ent3"}; 
+z3 = Y{N1,"ent3"}; 
 z4 = Y{N2,"ent3"}; 
 z5 = Y{N3,"ent3"}; 
 
