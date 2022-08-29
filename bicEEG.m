@@ -48,6 +48,18 @@
 %
 % channel: (integer) An integer between 1 and 4 used to 
 % select one out of the 4 available EEG channels.
+%
+% method: (string) You can choose between "fancy" and "fast".
+% The first method ("fancy") estimates the bicoherence matrix
+% both in its primary region and the symmetric ones. This is 
+% the prefered method when we are interested in obtaining 
+% visually pleasing results (contour plots). The second method
+% ("fast") skips the symmetric regions entirely and focuses only on
+% the primary one. This is the prefered method when we are 
+% interested in estimating the bicoherence for a large number of 
+% patients and EEG channels. The "fast" method should be 
+% approximately 4 times faster and more memory-efficient compared to 
+% the "fancy" one.
 % -------------------------------------------------------------------
 %
 % Return Variables: (bic, freq)
@@ -57,10 +69,12 @@
 % The second column stores the sleep stage Annotations 
 %
 % freq: (array of floats) A 1D array which can be used as a 
+% frequency axis for the bicoherence matrix. The size and the 
+% bounds of freq depend on fs, fc, K and method.
 % 
 % ===================================================================
 
-function [bic, freq] = bicEEG(X, K, fs, fc, channel)
+function [bic, freq] = bicEEG(X, K, fs, fc, channel, method)
 
     % ---------------------------------------------------------------
     % Parameter Checks
@@ -70,6 +84,10 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel)
     if fs <= 0 error("fs must be positive"); end
     if fc <= 0 error("fc must be positive"); end
     if channel < 1 || channel > 4 error("invalid EEG channel"); end 
+    
+    if method ~= "fancy" && method ~= "fast" 
+        error("Invalid estimation method");
+    end
     
     N = size(X,1);
     if N <= 0 error("X is empty"); end
@@ -100,9 +118,9 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel)
     % Frequency axis
     % ---------------------------------------------------------------
     
-    if (rem(M,2) == 0)
+    if rem(M,2) == 0
         freq = [-M/2:(M/2-1)];
-    else
+    elseif rem(M,2) == 1
         freq = [-(M-1)/2:(M-1)/2];
     end
 
@@ -114,18 +132,33 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel)
     % len: length of truncated FFT
     % win: hanning window for FFT
     % tri: array of indices for accumulating triple products
-    idx = 1:M;
-    idx = idx(-fc * M <= freq * fs & freq * fs <= fc * M);
+    idx = 1:M; win = hanning(M);
+    
+    if method == "fancy"
+        idx = idx(-fc * M <= freq * fs & freq * fs <= fc * M);
+
+    elseif method == "fast"
+        idx = idx(freq * fs <= fc * M & freq >= 0);
+    end
+
     len = numel(idx);
-    win = hanning(M);
     tri = hankel([1:len],[len,1:len-1]);
 
-    % Hexagonal mask to remove artifacts outside
-    % the hexagonal symmetry regions.
-    lo = -(len-1)/2; hi = +(len-1)/2; u = lo:1:hi;
-    hex = ones(len,1) * u;
-    hex = abs(hex) + abs(hex') + abs(hex+hex');
-    hex = (hex < len);
+    if method == "fancy"
+        % Hexagonal mask to remove artifacts
+        % outside the hexagonal symmetry regions
+        lo = -(len-1)/2; hi = +(len-1)/2; u = lo:1:hi;
+        hex = ones(len,1) * u;
+        hex = abs(hex) + abs(hex') + abs(hex+hex');
+        hex = (hex < len);
+
+    elseif method == "fast"
+        % Triangular mask to remove artifacts
+        % outside the primary region
+        u   = 0:1:(len-1);                                   
+        u   = ones(len,1) * u;
+        hex = (u' <= u) & (u >= 0) & (u + u' < len);
+    end
 
     % Bicoherence estimation for every 30sec epoch
     for i = 1:N
@@ -133,56 +166,91 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel)
         % b: (2D array) bispectrum/bicoherence matrix
         x = cell2mat(X{i,channel}); 
         b = zeros(len,len); 
-
-        % P12, P2: (2D array) normalization coefficients
+    
+        % P12, P3: (2D array) normalization coefficients
         P12 = zeros(len,len); 
         P3  = zeros(len,len);
-
+    
         % ind:  (1D array) array of indices
         % to extract EEG segments
         ind  = [1:M];
-
+    
         % A small positive constant to ensure numerical 
         % stability when performing floating point divisions
         epsilon = 1e-5;
+    
+        if method == "fancy"
+            % Partial estimations for every sub-segment
+            for j = 1:K
+                % Extract a segment from x
+                y = x(ind);
 
-        % Partial estimations for every sub-segment
-        for j = 1:K
-            % Extract a segment from x
-            y = x(ind);
+                % Subtract the mean and
+                % apply the hanning window
+    	        y = ((y(:) - mean(y))/(std(y) + epsilon)) .* win;
+    
+                % Estimate the FFT of the segment
+                % and discard unnecessary frequencies
+    	        Y  = fft(y) / M;
+                Y  = fftshift(Y);
+                Y  = Y(idx);
+                Y  = ifftshift(Y);
+                CY = conj(Y);
 
-            % Subtract the mean and
-            % apply the hanning window
-    	    y = ((y(:) - mean(y))/(std(y) + epsilon)) .* win;
+                % Update the estimation of the power-spectrum
+                % Update the estimation of the bispectrum
+                Y12 = Y * Y.';
+                Y3  = CY(tri);
+                P12 = P12 + abs(Y12) .^ 2;
+                P3  = P3 + abs(Y3) .^ 2;
+                b   = b + Y12 .* Y3;
 
-            % Estimate the FFT of the segment
-            % and discard unnecessary frequencies
-    	    Y  = fft(y) / M;
-            Y  = fftshift(Y);
-            Y  = Y(idx);
-            Y  = ifftshift(Y);
-            CY = conj(Y);
-
-            % Update the estimation of the power-spectrum
-            % Update the estimation of the bispectrum
-            Y12 = Y * Y.';
-            Y3  = CY(tri);
-            P12 = P12 + abs(Y12) .^ 2;
-            P3  = P3 + abs(Y3) .^ 2;
-            b   = b + Y12 .* Y3;
-            
-            % update the slicing indices
-            ind = ind + M;
-        end
-
-        % Normalize the bispectrum to obtain the bicoherence
-        epsilon = 1e-5;
-        b = (abs(b) .^ 2) ./ (P12 .* P3 + epsilon);
+                % update the slicing indices
+                ind = ind + M;
+            end
+    
+            % Normalize the bispectrum to obtain the bicoherence
+            epsilon = 1e-5;
+            b = (abs(b) .^ 2) ./ (P12 .* P3 + epsilon);
         
-        % Shift the elements of the bicoherence matrix,
-        % remove any artifacts outside the symmetry regions
-        % and save the final result.
-        bic{i,1} = {fftshift(b) .* hex};
+            % Shift the elements of the bicoherence matrix,
+            % remove any artifacts outside the symmetry regions
+            % and save the final result.
+            bic{i,1} = {fftshift(b) .* hex};
+    
+        elseif method == "fast"
+            for j = 1:K
+                % Extract a segment from x
+                y = x(ind);
+                
+                % Subtract the mean and
+                % apply the hanning window                
+                y = (y(:) - mean(y)) / (std(y) + epsilon) .* win;
+    
+                % Estimate the FFT of the segment
+                % and discard unnecessary frequencies
+                Y  = fft(y) / M;
+                Y  = fftshift(Y);
+                Y  = Y(idx);
+                CY = conj(Y);
+    
+                % Update the estimation of the power-spectrum
+                % Update the estimation of the bispectrum
+                Y12 = Y * Y.';
+                Y3  = CY(tri);
+                P12 = P12 + abs(Y12) .^ 2;
+                P3  = P3 + abs(Y3) .^ 2;
+                b   = b + Y12 .* Y3;
+    
+                % update the slicing indices 
+                ind = ind + M;
+            end
+
+            % Normalize the bispectrum to obtain the bicoherence
+            epsilon = 1e-5;
+            b = (abs(b) .^ 2) ./ (P12 .* P3 + epsilon);
+            bic{i,1} = {b .* hex};
+        end
     end
 
     % ---------------------------------------------------------------
