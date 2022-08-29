@@ -50,7 +50,7 @@ X = loadEDF(patient_ID);
 fprintf("Done\n"); toc;
 
 fprintf("Estimating bispectra ... "); tic;
-[bis, freq] = bisEEG(X,K,fs,fc,channel_ID);
+[bis, freq] = bisEEG(X,K,fs,fc,channel_ID,"fancy");
 fprintf("Done\n"); toc;
 
 % ===================================================================

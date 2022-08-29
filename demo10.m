@@ -28,7 +28,7 @@ norm = "pdf";                   % Normalization type for histograms:
 % Initialize empty tables to store bicoherence features
 sz = [0 6];
 types = ["double" "double" "double" "double" "double" "string"];
-names = ["ent1" "ent2" "ent3" "avg" "peak" "Annotations"];
+names = ["ent1" "ent2" "ent3" "avg" "med" "Annotations"];
 delta = table('Size',sz,'VariableTypes',types,'VariableNames',names);
 theta = table('Size',sz,'VariableTypes',types,'VariableNames',names);
 alpha = table('Size',sz,'VariableTypes',types,'VariableNames',names);
@@ -44,7 +44,7 @@ for i = start:stop
     fprintf("OK\n");
 
     fprintf("Estimating bicoherence matrix ... ");
-    [X,f] = bicEEG(Z,K,fs,fc,channel);
+    [X,f] = bicEEG(Z,K,fs,fc,channel,"fast");
     fprintf("OK\n");
 
     fprintf("Extracting bicoherence features ... ");
@@ -77,6 +77,14 @@ for k = 1:K
     z4 = delta{N2, k};
     z5 = delta{N3, k};
 
+    if (k == 2) || (k == 3)
+        z1 = log10(1+z1);
+        z2 = log10(1+z2);
+        z3 = log10(1+z3);
+        z4 = log10(1+z4);
+        z5 = log10(1+z5);
+    end
+
     [y1, x1] = hist(z1,nbins); y1 = y1 / numel(z1);
     [y2, x2] = hist(z2,nbins); y2 = y2 / numel(z2);
     [y3, x3] = hist(z3,nbins); y3 = y3 / numel(z3);
@@ -107,6 +115,14 @@ for k = 1:K
     z3 = theta{N1, k};
     z4 = theta{N2, k};
     z5 = theta{N3, k};
+
+    if (k == 2) || (k == 3)
+        z1 = log10(1+z1);
+        z2 = log10(1+z2);
+        z3 = log10(1+z3);
+        z4 = log10(1+z4);
+        z5 = log10(1+z5);
+    end
 
     [y1, x1] = hist(z1,nbins); y1 = y1 / numel(z1);
     [y2, x2] = hist(z2,nbins); y2 = y2 / numel(z2);
@@ -139,6 +155,14 @@ for k = 1:K
     z4 = alpha{N2, k};
     z5 = alpha{N3, k};
 
+    if (k == 2) || (k == 3)
+        z1 = log10(1+z1);
+        z2 = log10(1+z2);
+        z3 = log10(1+z3);
+        z4 = log10(1+z4);
+        z5 = log10(1+z5);
+    end
+
     [y1, x1] = hist(z1,nbins); y1 = y1 / numel(z1);
     [y2, x2] = hist(z2,nbins); y2 = y2 / numel(z2);
     [y3, x3] = hist(z3,nbins); y3 = y3 / numel(z3);
@@ -169,6 +193,14 @@ for k = 1:K
     z3 = beta{N1, k};
     z4 = beta{N2, k};
     z5 = beta{N3, k};
+
+    if (k == 2) || (k == 3)
+        z1 = log10(1+z1);
+        z2 = log10(1+z2);
+        z3 = log10(1+z3);
+        z4 = log10(1+z4);
+        z5 = log10(1+z5);
+    end
 
     [y1, x1] = hist(z1,nbins); y1 = y1 / numel(z1);
     [y2, x2] = hist(z2,nbins); y2 = y2 / numel(z2);
