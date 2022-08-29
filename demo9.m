@@ -9,6 +9,9 @@
 % 2) Estimate the bicoherence of the EEG in every 30sec epoch
 % 3) Plot the bicoherence estimations (pause for a few seconds
 %    between each plot)
+% 4) Save the contour plots as png images. (Use different 
+%    folders based on the Sleep stage Annotations, EEG channel
+%    and patient ID).
 % =============================================================
 
 % =============================================================
@@ -29,12 +32,15 @@ fs = 256;           % EEG sampling frequency in Hertz
 fc = 32;            % cut-off frequency for bicoherence estimation
 
 % Plot settings
-dt = 1.0;           % Playback speed in seconds per frame     
-levels = 8;         % number of levels for contour plots
+dt = 0.1;           % Playback speed in seconds per frame     
+levels = 12;        % number of levels for contour plots
 cmap = "turbo";     % colormap for contour plots ("turbo" or "parula") 
 
+% save directory
+dir = "C:\Users\USER\Desktop\bicoherence";
+
 % =============================================================
-% 2) Bispectrum estimation
+% 2) Bicoherence estimation
 % =============================================================
 
 fprintf("Loading EDF file ... "); tic;
@@ -46,7 +52,36 @@ fprintf("Estimating bicoherence index ... "); tic;
 fprintf("Done\n"); toc;
 
 % =============================================================
-% 3) Bicoherence Plots
+% 3) Create empty folders to store the plots
+% =============================================================
+
+mkdir(                                                  ...
+    sprintf(                                            ...
+        "%s\\patient%d\\channel%d\\%s",                 ...
+        dir, patient_ID, channel_ID, "Sleep stage W"));
+
+mkdir(                                                  ...
+    sprintf(                                            ...
+        "%s\\patient%d\\channel%d\\%s",                 ...
+        dir,patient_ID,channel_ID,"Sleep stage R"));
+
+mkdir(                                                  ...
+    sprintf(                                            ...
+        "%s\\patient%d\\channel%d\\%s",                 ...
+        dir,patient_ID,channel_ID,"Sleep stage N1"));
+
+mkdir(                                                  ...
+    sprintf(                                            ...
+        "%s\\patient%d\\channel%d\\%s",                 ...
+        dir,patient_ID,channel_ID,"Sleep stage N2"));
+
+mkdir(                                                  ...
+    sprintf(                                            ...
+        "%s\\patient%d\\channel%d\\%s",                 ...
+        dir,patient_ID,channel_ID,"Sleep stage N3"));
+
+% =============================================================
+% 4) Display contour plots and save the results
 % =============================================================
 
 N = size(bic,1);
@@ -54,13 +89,15 @@ pause('on');
 
 for i = 1:1:N
     b = cell2mat(bic{i,1});
-    subplot(2,1,1);
+    
     contourf(freq,freq,b,levels,'LineColor','none');
     txt = sprintf("frame %d out of %d: %s",i,N,bic.Annotations{i});
     xlabel('f_1'); ylabel('f_2'); title(txt);
     caxis([0.0 1.0]); colormap(cmap); colorbar;
-    subplot(2,1,2);
-    plot(cell2mat(Z{i,1}));
-    xlabel('samples'); ylabel('Voltage');
+    
+    path = sprintf("%s\\patient%d\\channel%d",dir,patient_ID,channel_ID);
+    filename = sprintf("%s\\%s\\%d.png", path, bic.Annotations{i}, i);
+    exportgraphics(gca, filename);
+    
     pause(dt);
 end
