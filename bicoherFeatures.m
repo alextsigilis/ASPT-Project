@@ -30,49 +30,22 @@ function [delta, theta, alpha, beta] = bicoherFeatures(X, f)
 
     % Initialize empty tables to store
     % features from the bicoherence matrices.
-    types = [
-        "double",                   ...
-        "double",                   ...
-        "double",                   ...
-        "double",                   ...
-        "double",                   ...
-        "string"];
-    
-    names = [                       ...
-        "ent1",                     ...
-        "ent2",                     ...
-        "avg",                      ...
-        "f1",                       ...
-        "f2",                       ...
-        "Annotations"];
+    types = ["double" "double" "double" "double" "string"];
+    names = ["ent1" "ent2" "avg" "argmax" "Annotations"];
+    sz = [N numel(types)];
 
-    delta = table(                  ...
-        'Size',          [N 6],     ...
-        'VariableTypes', types,     ...
-        'VariableNames', names);
-
-    theta = table(                  ...
-        'Size',          [N 6],     ...
-        'VariableTypes', types,     ...
-        'VariableNames', names);
-
-    alpha = table(                  ...
-        'Size',          [N 6],     ...
-        'VariableTypes', types,     ...
-        'VariableNames', names);
-
-    beta = table(                   ...
-        'Size',          [N 6],     ...
-        'VariableTypes', types,     ...
-        'VariableNames', names);
+    delta = table('Size',sz,'VariableTypes',types,'VariableNames',names);
+    theta = table('Size',sz,'VariableTypes',types,'VariableNames',names);
+    alpha = table('Size',sz,'VariableTypes',types,'VariableNames',names);
+    beta  = table('Size',sz,'VariableTypes',types,'VariableNames',names);
 
     % Binary masks for splitting the bicoherence matrix
     % into delta, theta, alpha and beta wave partitions
     f0 = 0.0; f1 = 4.0; f2 = 8.0; f3 = 16.0; f4 = 32.0;
-    deltaHex = (f'<=f) & (f>=0) & (f0<=(f+f') & (f+f')<=f1);
-    thetaHex = (f'<=f) & (f>=0) & (f1<=(f+f') & (f+f')<=f2);
-    alphaHex = (f'<=f) & (f>=0) & (f2<=(f+f') & (f+f')<=f3);
-    betaHex  = (f'<=f) & (f>=0) & (f3<=(f+f') & (f+f')<=f4);
+    deltaHex = (f'<=f) & (f>=0) & f0<=(f+f') & (f+f')<=f1;
+    thetaHex = (f'<=f) & (f>=0) & f1<=(f+f') & (f+f')<=f2;
+    alphaHex = (f'<=f) & (f>=0) & f2<=(f+f') & (f+f')<=f3;
+    betaHex  = (f'<=f) & (f>=0) & f3<=(f+f') & (f+f')<=f4;
 
     for i = 1:1:N
         % Extract the entire bicoherence
@@ -80,8 +53,8 @@ function [delta, theta, alpha, beta] = bicoherFeatures(X, f)
         bic = cell2mat(X{i,1});
 
         % Partition the bicoherence matrix
-        deltaBic = bic(deltaHex);
-        thetaBic = bic(thetaHex);
+        deltaBic = bic(deltaHex); 
+        thetaBic = bic(thetaHex); 
         alphaBic = bic(alphaHex);
         betaBic  = bic(betaHex);
         
@@ -91,9 +64,8 @@ function [delta, theta, alpha, beta] = bicoherFeatures(X, f)
 
         delta{i,"ent1"} = -mean(p.*log2(p),'omitnan');
         delta{i,"ent2"} = -mean(q.*log2(q),'omitnan');
-        delta{i,"f1"}   = nan;
-        delta{i,"f2"}   = nan;
-        delta{i,"avg"}  = mean(deltaBic);
+        delta{i,"avg"}  = +mean(deltaBic);
+        delta{i,"argmax"} = 0;
 
         % Extract features from theta waves
         p = thetaBic.^1; 
@@ -101,9 +73,8 @@ function [delta, theta, alpha, beta] = bicoherFeatures(X, f)
         
         theta{i,"ent1"} = -mean(p.*log2(p),'omitnan');
         theta{i,"ent2"} = -mean(q.*log2(q),'omitnan');
-        theta{i,"f1"}   = nan;
-        theta{i,"f2"}   = nan;
-        theta{i,"avg"}  = mean(thetaBic);
+        theta{i,"avg"}  = +mean(thetaBic);
+        theta{i,"argmax"} = 0;
 
         % Extract features from alpha waves
         p = alphaBic.^1; 
@@ -111,9 +82,8 @@ function [delta, theta, alpha, beta] = bicoherFeatures(X, f)
 
         alpha{i,"ent1"} = -mean(p.*log2(p),'omitnan');
         alpha{i,"ent2"} = -mean(q.*log2(q),'omitnan');
-        alpha{i,"f1"}   = nan;
-        alpha{i,"f2"}   = nan;
-        alpha{i,"avg"}  = mean(alphaBic);
+        alpha{i,"avg"}  = +mean(alphaBic);
+        alpha{i,"argmax"} = 0;
 
         % Extract features from beta waves
         p = betaBic.^1; 
@@ -121,14 +91,13 @@ function [delta, theta, alpha, beta] = bicoherFeatures(X, f)
         
         beta{i,"ent1"} = -mean(p.*log2(p),'omitnan');
         beta{i,"ent2"} = -mean(q.*log2(q),'omitnan');
-        beta{i,"f1"}   = nan;
-        beta{i,"f2"}   = nan;
-        beta{i,"avg"}  = mean(betaBic);
-    end
+        beta{i,"avg"}  = +mean(betaBic);
+        beta{i,"argmax"} = 0;
 
-    % Copy sleep stage Annotations;
-    delta.Annotations = X.Annotations;
-    theta.Annotations = X.Annotations;
-    alpha.Annotations = X.Annotations;
-    beta.Annotations  = X.Annotations;
+        % Copy sleep stage annotations
+        delta{i, "Annotations"} = X{i, "Annotations"};
+        theta{i, "Annotations"} = X{i, "Annotations"};
+        alpha{i, "Annotations"} = X{i, "Annotations"};
+        beta{i,  "Annotations"} = X{i, "Annotations"};
+    end
 end
