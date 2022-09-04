@@ -171,8 +171,8 @@ function [bic, freq] = bicEEGfast(X, K, fs, fc, channel, method)
     if method == "fancy"
         for i = 1:1:N
             % Extract a 30sec EEG record
-            x = cell2mat(X{i,channel});
-
+            x = cell2mat(X{i,channel}); 
+            
             % Split, standardize and apply a window function
             y = x(seg);
             y = (y - mean(y,1)) ./ (std(y,0,1) + epsilon);           
@@ -219,7 +219,7 @@ function [bic, freq] = bicEEGfast(X, K, fs, fc, channel, method)
     elseif method == "fast"
         for i = 1:1:N
             % Extract a 30sec EEG record
-            x = cell2mat(X{i,channel});
+            x = cell2mat(X{i,channel}); 
 
             % Split, standardize and apply a window function
             y = x(seg);
