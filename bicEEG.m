@@ -4,16 +4,15 @@
 % -------------------------------------------------------------------
 %
 % Function Description:
-% This function estimates the bicoherence index of 
-% EEG recordings in 30sec windows. By locating the 
-% peaks of the bicoherence, we can detect quadratic
-% phase coupling between different frequencies. The
-% bicoherence is essentially a normalized bispectrum.
-% Many methods have been used to normalize the bispectrum 
-% This function uses the one proposed by Nagashima, 2006:
+% This function estimates the bicoherence index of EEG recordings. 
+% By locating the peaks of the bicoherence, we can detect quadratic
+% phase coupling between different frequencies. The bicoherence is 
+% essentially a normalized bispectrum. Many methods have been used
+% to normalize the bispectrum. This function uses the one proposed 
+% by Nagashima, 2006:
 % 
 %                 E{|F(f1)F(f2)F'(f1+f2)|^2}      
-% b(f1,f2) = ------------------------------------
+% b(f1,f2) = ------------------------------------  (1)
 %             E{|F(f1)F(f2)|^2} E{|F'(f1+f2)|^2}
 %
 % where:
@@ -21,9 +20,24 @@
 %   2) the apostrophe ' denotes complex conjugation
 %   3) F is the FFT of an EEG segment
 %   4) b is the bicoherence index
+%
+% The estimation of the bicoherence is obtained in the following
+% manner:
+%
+% 1) The EEG signal is split into K partitions.
+% 2) The samples are standardized by subtracting the mean and 
+%    dividing with the standard deviation of every partition.
+% 3) A window function (hanning window) is applied in every 
+%    partition.
+% 4) The bispectrum of every partition is estimated, as well as 
+%    some normalization coefficients related to the power spectrum.
+%    See formula (1).
+% 5) The final estimation of the bicoherence is obtained by averaging
+%    the bispectrum and normalization coefficients according to 
+%    formula (1).
 % -------------------------------------------------------------------
 %
-% Arguments List: (X, K, fs, fc, channel)
+% Arguments List: (X, K, fs, fc, channel, method)
 %
 % X: (table) the EEG recordings and sleep stage
 % Annotations. You should use loadEDF to obtain this 
@@ -73,27 +87,27 @@
 % bounds of freq depend on fs, fc, K and method.
 % ===================================================================
 
-function [bic, freq] = bicEEGfast(X, K, fs, fc, channel, method)
+function [bic, freq] = bicEEG(X, K, fs, fc, channel, method)
 
     % ---------------------------------------------------------------
     % Parameter Checks
-    % ---------------------------------------------------------------  
-    
+    % ---------------------------------------------------------------
+
     if K  <= 0 error("K must be positive "); end
     if fs <= 0 error("fs must be positive"); end
     if fc <= 0 error("fc must be positive"); end
-    if channel < 1 || channel > 4 error("invalid EEG channel"); end 
+    if channel < 1 || channel > 4 error("invalid EEG channel"); end
 
-    if method ~= "fancy" && method ~= "fast" 
+    if method ~= "fancy" && method ~= "fast"
         error("Invalid estimation method");
     end
-    
+
     N = size(X,1);
     if N <= 0 error("X is empty"); end
-    
+
     L = numel(cell2mat(X{1,channel}));
     if L <= 0 error("EEG records are empty"); end
-    
+
     M = floor(L/K);
     if M < 5 error("low frequency resolution"); end
     if 2*M*fc >= (M-2)*fs error("Nyquist criterion is violated"); end
@@ -102,17 +116,17 @@ function [bic, freq] = bicEEGfast(X, K, fs, fc, channel, method)
     % ---------------------------------------------------------------
     % Create a table to store the bicoherence and sleep stage labels
     % ---------------------------------------------------------------
-    
+
     names = [X.Properties.VariableNames{channel}, "Annotations"];
     types = ["cell", "string"];
     sz = [N numel(types)];
     bic = table('Size',sz,'VariableTypes',types,'VariableNames',names);
     bic.Annotations = X.Annotations;
-    
+
     % ---------------------------------------------------------------
     % Frequency axis
     % ---------------------------------------------------------------
-    
+
     if rem(M,2) == 0
         freq = [-M/2:(M/2-1)];
     elseif rem(M,2) == 1
@@ -138,21 +152,21 @@ function [bic, freq] = bicEEGfast(X, K, fs, fc, channel, method)
     %
     % epsilon: a small positive constant to ensure numerical
     % stability when performing floating point divisions
-		
-	idx = 1:M; win = hanning(M);
-    
+
+    idx = 1:M; win = hanning(M);
+
     if method == "fancy"
         idx = idx(-fc * M <= freq * fs & freq * fs <= fc * M);
     elseif method == "fast"
         idx = idx(freq * fs <= fc * M & freq >= 0);
     end
-    
-	len = numel(idx);
-    
-	tri = hankel([1:len],[len,1:len-1]);
-	tri = reshape(tri, [len len 1]) + reshape(len * [0:K-1], [1 1 K]);
-    
-	seg = [1:M]' + M*[0:K-1];
+
+    len = numel(idx);
+
+    tri = hankel([1:len],[len,1:len-1]);
+    tri = reshape(tri, [len len 1]) + reshape(len * [0:K-1], [1 1 K]);
+
+    seg = [1:M]' + M*[0:K-1];
 
     if method == "fancy"
         u = (1-len)/2:1:(len-1)/2;
@@ -160,7 +174,7 @@ function [bic, freq] = bicEEGfast(X, K, fs, fc, channel, method)
         u = abs(u) + abs(u') + abs(u + u');
         hex = u < len;
     elseif method == "fast"
-        u   = 0:1:(len-1);                                   
+        u   = 0:1:(len-1);
         u   = ones(len,1) * u;
         hex = (u' <= u) & (u >= 0) & (u + u' < len);
     end
@@ -171,11 +185,11 @@ function [bic, freq] = bicEEGfast(X, K, fs, fc, channel, method)
     if method == "fancy"
         for i = 1:1:N
             % Extract a 30sec EEG record
-            x = cell2mat(X{i,channel}); 
-            
+            x = cell2mat(X{i,channel});
+
             % Split, standardize and apply a window function
             y = x(seg);
-            y = (y - mean(y,1)) ./ (std(y,0,1) + epsilon);           
+            y = (y - mean(y,1)) ./ (std(y,0,1) + epsilon);
             y = y .* win;
 
             % estimate the FFT of every segment
@@ -188,17 +202,17 @@ function [bic, freq] = bicEEGfast(X, K, fs, fc, channel, method)
 
             % Reshape the FFT matrix appropriately in order
             % to vectorize the following calculations
-            Y1 = reshape(Y, [len 1 K]);                                           
+            Y1 = reshape(Y, [len 1 K]);
             Y2 = reshape(Y, [1 len K]);
 
-            % Estimate the bispectrum (b) and the 
+            % Estimate the bispectrum (b) and the
             % normalization coefficients (Y12, CY)
-            Y12 = Y1 .* Y2; 
+            Y12 = Y1 .* Y2;
             b   = Y12 .* CY;
 
             % Normalize the bispectrum matrix to obtain
             % the bicoherence.
-            Y12 = abs(Y12) .^ 2; 
+            Y12 = abs(Y12) .^ 2;
             Y12 = sum(Y12, 3);
 
             CY = abs(CY) .^ 2;
@@ -210,60 +224,60 @@ function [bic, freq] = bicEEGfast(X, K, fs, fc, channel, method)
             b = b ./ (Y12 .* CY + epsilon);
 
             % Shift the elements of the bispectrum matrix,
-            % discard any elements outside the symmetry 
+            % discard any elements outside the symmetry
             % regions and save the final result.
             b = fftshift(b);
             bic{i,1} = {b .* hex};
         end
-    
+
     elseif method == "fast"
         for i = 1:1:N
             % Extract a 30sec EEG record
-            x = cell2mat(X{i,channel}); 
-
+            x = cell2mat(X{i,channel});
+    
             % Split, standardize and apply a window function
             y = x(seg);
-            y = (y - mean(y,1)) ./ (std(y,0,1) + epsilon);           
+            y = (y - mean(y,1)) ./ (std(y,0,1) + epsilon);
             y = y .* win;
-
+    
             % estimate the FFT of every segment
             % and discard unnecessary frequencies
             Y = fft(y,[],1) / M;
             Y = fftshift(Y,1);
             Y = Y(idx,:);
             CY = conj(Y); CY = CY(tri);
-
+    
             % Reshape the FFT matrix appropriately in order
             % to vectorize the following calculations
-            Y1 = reshape(Y, [len 1 K]);                                           
+            Y1 = reshape(Y, [len 1 K]);
             Y2 = reshape(Y, [1 len K]);
-
-            % Estimate the bispectrum (b) and the 
+    
+            % Estimate the bispectrum (b) and the
             % normalization coefficients (Y12, CY)
-            Y12 = Y1 .* Y2; 
+            Y12 = Y1 .* Y2;
             b   = Y12 .* CY;
-
+    
             % Normalize the bispectrum matrix to obtain
             % the bicoherence.
-            Y12 = abs(Y12) .^ 2; 
+            Y12 = abs(Y12) .^ 2;
             Y12 = sum(Y12, 3);
-
+    
             CY = abs(CY) .^ 2;
             CY = sum(CY, 3);
-
+    
             b = sum(b, 3);
             b = abs(b) .^ 2;
-
+    
             b = b ./ (Y12 .* CY + epsilon);
-
-            % Discard any elements outside the symmetry 
+    
+            % Discard any elements outside the symmetry
             % regions and save the final result.
             bic{i,1} = {b .* hex};
         end
     end
 
     % ---------------------------------------------------------------
-    % Truncate the frequency axis and rescale according to fs 
+    % Truncate the frequency axis and rescale according to fs
     % ---------------------------------------------------------------
     freq = freq(idx);
     freq = freq * fs / M;
