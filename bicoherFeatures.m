@@ -39,15 +39,19 @@ function [Y] = bicoherFeatures(X, f)
 
     Y = table('Size',sz,'VariableTypes',types,'VariableNames',names);
 
+    % binary mask to separate the primary 
+    % region of the bicoherence matrix
+    hex = (f >= 0) & (f <= 32) & (f' <= f) & (f + f' <= 32);
+
     for i = 1:1:N
         % Extract the entire bicoherence
         % matrix for a 30sec EEG segment
         bic = cell2mat(X{i,1});
+        p = bic(hex); q = p.^2;
 
         % Extract features from the
         % bicoherence matrix
-        p = bic(:).^1; q = bic(:).^2;
-        Y{i,"avg"}  = + mean(bic(:));
+        Y{i,"avg"}  = + mean(p);
         Y{i,"ent1"} = - mean(p .* log2(p),'omitnan');
         Y{i,"ent2"} = + log2(1 - 7.0 * mean(q .* log2(q),'omitnan'));
     end
