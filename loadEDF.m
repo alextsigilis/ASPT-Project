@@ -160,7 +160,7 @@ for i = 1:1:K
     dt = timerange(t0,t1);
 
     for j = 1:1:M
-        x = cell2mat(X{dt,j});
+        x = cell2mat(X{dt,j}); x = single(x);
         Z(i,j) = num2cell(x,1);
     end
 end
