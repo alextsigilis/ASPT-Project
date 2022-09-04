@@ -124,20 +124,20 @@ function [bic, freq] = bicEEGfast(X, K, fs, fc, channel, method)
     % ---------------------------------------------------------------
 
     % idx: array of indices for discarding unnecessary FFT components
-	% 
+    %
     % len: length of truncated FFT
-	% 
+    %
     % win: hanning window for FFT
-	% 
+    %
     % tri: array of indices for accumulating triple products
-	% 
+    %
     % seg: array of indices for partitioning the EEG records
-	% 
-    % hex: hexagonal boolean mask to remove artifacts outside the 
-	% symmetry regions
-	% 
-	% epsilon: a small positive constant to ensure numerical
-	% stability when performing floating point divisions
+    %
+    % hex: hexagonal boolean mask to remove artifacts outside the
+    % symmetry regions
+    %
+    % epsilon: a small positive constant to ensure numerical
+    % stability when performing floating point divisions
 		
 	idx = 1:M; win = hanning(M);
     
