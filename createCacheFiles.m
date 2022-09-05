@@ -24,7 +24,7 @@
 clear all; close all; clc;
 
 start = 1;            % first patient
-stop  = 2;          % last patient
+stop  = 154;          % last patient
 
 for i = start:1:stop
     matFile = sprintf("%03d.mat",i);
