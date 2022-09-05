@@ -41,7 +41,7 @@ function [Y] = bicoherFeatures(X, f)
 
     % binary mask to separate the primary 
     % region of the bicoherence matrix
-    hex = (f >= 0) & (f <= 32) & (f' <= f) & (f + f' <= 32);
+    hex = (f >= 0) & (f' <= f) & (f + f' <= f(end));
 
     for i = 1:1:N
         % Extract the entire bicoherence
