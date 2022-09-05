@@ -24,7 +24,7 @@
 clear all; close all; clc;
 
 start = 1;            % first patient
-stop  = 154;          % last patient
+stop  = 2;          % last patient
 
 for i = start:1:stop
     matFile = sprintf("%03d.mat",i);
@@ -34,6 +34,12 @@ for i = start:1:stop
         continue;
     end
 
+    % Delete pre-existing mat-files
+    if isfile(matFile)
+        delete(matFile);
+    end
+
+    % Create new mat-files
     fprintf("Patient %d out of %d\n", i, stop);
     Z = loadEDF(i);
     save(matFile, 'Z');
