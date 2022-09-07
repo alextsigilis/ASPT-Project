@@ -138,20 +138,25 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel, method)
     % ---------------------------------------------------------------
 
     % idx: array of indices for discarding unnecessary FFT components
+    %      If method == "fancy", then idx discards all frequencies 
+    %      outside the interval [-fc,+fc]. 
+    %      If method == "fast", then idx discards all frequencies 
+    %      outside the interval [0,+fc].
     %
-    % len: length of truncated FFT
+    % len: length of truncated FFT 
     %
     % win: hanning window for FFT
     %
-    % tri: array of indices for accumulating triple products
+    % tri: array of indices for estimating F*(f1+f2) for every 
+    %      possible pair of f1,f2 frequencies. See formula (1)
     %
     % seg: array of indices for partitioning the EEG records
     %
     % hex: hexagonal boolean mask to remove artifacts outside the
-    % symmetry regions
+    %      symmetry regions
     %
     % epsilon: a small positive constant to ensure numerical
-    % stability when performing floating point divisions
+    %      stability when performing floating point divisions
 
     idx = 1:M; win = hanning(M);
 
@@ -198,20 +203,30 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel, method)
             Y = fftshift(Y,1);
             Y = Y(idx,:);
             Y = ifftshift(Y,1);
-            CY = conj(Y); CY = CY(tri);
 
             % Reshape the FFT matrix appropriately in order
             % to vectorize the following calculations
+            % Y1 => F(f1)           (See formula 1)
+            % Y2 => F(f2)           (See formula 1)
+            % CY => F*(f1+f2)       (See formula 1)
             Y1 = reshape(Y, [len 1 K]);
             Y2 = reshape(Y, [1 len K]);
+            CY = conj(Y); CY = CY(tri);
 
-            % Estimate the bispectrum (b) and the
-            % normalization coefficients (Y12, CY)
+            % Estimate the bispectrum (b) and the 
+            % normalization coefficients (Y12, CY) 
+            % b   => B(f1,f2) = F(f1)F(f2)F*(f1+f2)
+            % Y12 => F(f1)*F(f2)         
+            % CY  => F*(f1+f2)
+            % See formula (1) for details
             Y12 = Y1 .* Y2;
             b   = Y12 .* CY;
 
-            % Normalize the bispectrum matrix to obtain
-            % the bicoherence.
+            % Estimate the average bispectrum and average
+            % normalization coefficients across all partitions
+            % Y12 => E{|F(f1)F(f2)|^2}
+            % CY  => E{|F*(f1+f2)|^2}
+            % b   => E{|F(f1)F(f2)F*(f1+f2)|^2}
             Y12 = abs(Y12) .^ 2;
             Y12 = sum(Y12, 3);
 
@@ -221,6 +236,8 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel, method)
             b = sum(b, 3);
             b = abs(b) .^ 2;
 
+            % Normalize the bispectrum to obtain the bicoherence
+            % See formula (1) for details
             b = b ./ (Y12 .* CY + epsilon);
 
             % Shift the elements of the bispectrum matrix,
@@ -245,20 +262,30 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel, method)
             Y = fft(y,[],1) / M;
             Y = fftshift(Y,1);
             Y = Y(idx,:);
-            CY = conj(Y); CY = CY(tri);
     
             % Reshape the FFT matrix appropriately in order
             % to vectorize the following calculations
+            % Y1 => F(f1)           (See formula 1)
+            % Y2 => F(f2)           (See formula 1)
+            % CY => F*(f1+f2)       (See formula 1)
             Y1 = reshape(Y, [len 1 K]);
             Y2 = reshape(Y, [1 len K]);
+            CY = conj(Y); CY = CY(tri);
     
-            % Estimate the bispectrum (b) and the
-            % normalization coefficients (Y12, CY)
+            % Estimate the bispectrum (b) and the 
+            % normalization coefficients (Y12, CY) 
+            % b   => B(f1,f2) = F(f1)F(f2)F*(f1+f2)
+            % Y12 => F(f1)*F(f2)         
+            % CY  => F*(f1+f2)
+            % See formula (1) for details
             Y12 = Y1 .* Y2;
             b   = Y12 .* CY;
     
-            % Normalize the bispectrum matrix to obtain
-            % the bicoherence.
+            % Estimate the average bispectrum and average
+            % normalization coefficients across all partitions
+            % Y12 => E{|F(f1)F(f2)|^2}
+            % CY  => E{|F*(f1+f2)|^2}
+            % b   => E{|F(f1)F(f2)F*(f1+f2)|^2}
             Y12 = abs(Y12) .^ 2;
             Y12 = sum(Y12, 3);
     
@@ -268,6 +295,8 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel, method)
             b = sum(b, 3);
             b = abs(b) .^ 2;
     
+            % Normalize the bispectrum to obtain the bicoherence
+            % See formula (1) for details
             b = b ./ (Y12 .* CY + epsilon);
     
             % Discard any elements outside the symmetry
