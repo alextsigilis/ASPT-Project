@@ -11,7 +11,7 @@
 % to normalize the bispectrum. This function uses the one proposed 
 % by Nagashima, 2006:
 % 
-%                 E{|F(f1)F(f2)F'(f1+f2)|^2}      
+%                 E{|F(f1)F(f2)F'(f1+f2)|}^2      
 % b(f1,f2) = ------------------------------------  (1)
 %             E{|F(f1)F(f2)|^2} E{|F'(f1+f2)|^2}
 %
