@@ -158,6 +158,10 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel, method)
     % epsilon: a small positive constant to ensure numerical
     %      stability when performing floating point divisions
 
+    a = 0.5625; a = 0.0;                                                    % Change this
+    S = floor(M * (1 - a)); S = max(1, S);                                  % Remove this
+    K = floor((L - M) / S); K = max(1, K);                                  % Remove this
+
     idx = 1:M; win = hanning(M);
 
     if method == "fancy"
@@ -171,7 +175,7 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel, method)
     tri = hankel([1:len],[len,1:len-1]);
     tri = reshape(tri, [len len 1]) + reshape(len * [0:K-1], [1 1 K]);
 
-    seg = [1:M]' + M*[0:K-1];
+    seg = [1:M]' + S*[0:K-1];                                               % Change this
 
     if method == "fancy"
         u = (1-len)/2:1:(len-1)/2;
@@ -226,7 +230,7 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel, method)
             % normalization coefficients across all partitions
             % Y12 => E{|F(f1)F(f2)|^2}
             % CY  => E{|F*(f1+f2)|^2}
-            % b   => E{|F(f1)F(f2)F*(f1+f2)|^2}
+            % b   => E{|F(f1)F(f2)F*(f1+f2)|}^2
             Y12 = abs(Y12) .^ 2;
             Y12 = sum(Y12, 3);
 
@@ -285,7 +289,7 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel, method)
             % normalization coefficients across all partitions
             % Y12 => E{|F(f1)F(f2)|^2}
             % CY  => E{|F*(f1+f2)|^2}
-            % b   => E{|F(f1)F(f2)F*(f1+f2)|^2}
+            % b   => E{|F(f1)F(f2)F*(f1+f2)|}^2
             Y12 = abs(Y12) .^ 2;
             Y12 = sum(Y12, 3);
     
