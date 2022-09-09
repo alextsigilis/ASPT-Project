@@ -20,7 +20,7 @@ clear all; close all; clc;
 % ------------------------ Script Parameters ------------------------
 
 % Hyperparameters for estimating the bicoherence
-K  = 24;                        % Number of segments
+K  = 15; K = 32;                % Number of segments
 fs = 256;                       % Sampling frequency
 fc = 32;                        % upper bound on frequency axis
 
@@ -92,15 +92,16 @@ for k = 1:K
     z4 = Y{N2,k};       % Features of sleep stage N2
     z5 = Y{N3,k};       % Features of sleep stage N3
 
-    [y1, x1] = hist(z1,nbins); y1 = y1 / numel(z1);
-    [y2, x2] = hist(z2,nbins); y2 = y2 / numel(z2);
-    [y3, x3] = hist(z3,nbins); y3 = y3 / numel(z3);
-    [y4, x4] = hist(z4,nbins); y4 = y4 / numel(z4);
-    [y5, x5] = hist(z5,nbins); y5 = y5 / numel(z5);
+    % Probability Density Functions for different sleep stages
+    [y1, x1] = hist(z1,nbins); y1 = (y1 * nbins) ./ (numel(z1) * range(z1));
+    [y2, x2] = hist(z2,nbins); y2 = (y2 * nbins) ./ (numel(z2) * range(z2));
+    [y3, x3] = hist(z3,nbins); y3 = (y3 * nbins) ./ (numel(z3) * range(z3));
+    [y4, x4] = hist(z4,nbins); y4 = (y4 * nbins) ./ (numel(z4) * range(z4));
+    [y5, x5] = hist(z5,nbins); y5 = (y5 * nbins) ./ (numel(z5) * range(z5));
  
     figure(idx); idx = idx + 1;
     plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5); grid on;
     xlabel(Y.Properties.VariableNames{k}); 
-    ylabel('Probability');
+    ylabel('Probability Density Function');
     legend("W", "R", "N1", "N2", "N3");
 end
