@@ -49,18 +49,20 @@ function Z = loadEDF(idx)
 % which contains the EEG recordings
 % annot_file: (string) the name of the file
 % which contains the EEG annotations
+% cache: (string) the name of the .mat file
+% which will be used as a cache file
 input_file = sprintf("SN%03d.edf",idx);
 annot_file = sprintf("SN%03d_sleepscoring.edf",idx);
+cache      = sprintf("%03d.mat",idx);
 
-% Make sure that the input files exist
-if ~isfile(input_file) || ~isfile(annot_file)
+% Make sure that the input files or the cache file exist
+if (~isfile(input_file) || ~isfile(annot_file)) && (~isfile(cache))
     error("Error: Input files not found\n\n");
 end
 
 % Try to retrieve the EDF recordings from the cache files.
 % (Depending on your storage medium this can be up to 10
 % times faster)
-cache = sprintf("%03d.mat",idx);
 if isfile(cache)
     load(cache,'Z');
     return;
