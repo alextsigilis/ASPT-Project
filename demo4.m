@@ -65,7 +65,10 @@ for i = n1:1:n2
 
     % Make sure the input file exists
     % before attempting to open it
-    if ~isfile(sprintf("SN%03d.edf",i))
+    edf = sprintf("SN%03d.edf",i);
+    mat = sprintf("%03d.mat",i);
+
+    if (~isfile(edf)) && (~isfile(mat))
         fprintf("Patient %d does not exist\n\n",i);
         continue;
     end
