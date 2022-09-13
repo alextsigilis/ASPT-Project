@@ -47,8 +47,9 @@ Y = table('Size',sz,'VariableTypes',types,'VariableNames',names);
 % Extract bicoherence features from every patient
 for i = start:stop
     % Make sure the input file exists
-    txt = sprintf("SN%03d.edf",i);
-    if ~isfile(txt) continue; end
+    edf = sprintf("SN%03d.edf",i);
+    mat = sprintf("%03d.mat",i);
+    if (~isfile(edf)) && (~isfile(mat)) continue; end
 
     % Load the EEG recordings 
     fprintf("Loading EDF files for patient %d ... ",i);
