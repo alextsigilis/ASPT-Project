@@ -38,7 +38,10 @@ names = ["xcorr" "ECB1" "ECB2" "stdEMG" "VppEMG" "Annotations"];
 features = table('Size',sz,'VariableTypes',types,'VariableNames',names);
 
 for i = id1:1:id2
-    if ~isfile(sprintf("SN%03d.edf",i)) continue; end
+    edf = sprintf("SN%03d.edf",i);
+    mat = sprintf("%03d.mat",i);
+
+    if (~isfile(edf)) && (~isfile(mat)) continue; end
 
     fprintf("Loading EOG/EMG recordings for patient %d ... ",i);
     Z = loadEDF(i);
