@@ -19,12 +19,12 @@ clear all; close all; clc;
 % Parameters for patient selection
 first = 1;      % First patient ID
 last  = 50;     % Last patient ID
-channel = 1;    % Selected EEG channel
+channel = 4;    % Selected EEG channel
 
 % Parameters for bicoherence estimation
-K = 32;         % Number of segments
+K  = 32;        % Number of segments
 fs = 256;       % EEG sampling frequency
-fc = 32;        % upper limit for bicoherence frequency axes
+fc = 32;        % Upper limit for bicoherence frequency axes
 
 % Parameters for QPC detection
 epsilon = 0.10; % Hard threshold for peak detection

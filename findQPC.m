@@ -72,14 +72,9 @@ for i = 1:N
 
     % Convert linear indices to subscripts
     [x, y] = ind2sub(size(bic),maxima);
-
-    % Convert integer subscripts to 
-    % frequency subscripts
-    f1  = f(x); f1 = f1(:);
-    f2  = f(y); f2 = f2(:);
     qpc = bic(maxima); qpc = qpc(:);
 
-    QPC{i,"peaks"} = {[f1 f2 qpc]};
+    QPC{i,"peaks"} = {[x y qpc]};
 end
 
 % Copy sleep stage Annotations
