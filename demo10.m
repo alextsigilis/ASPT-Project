@@ -20,7 +20,7 @@ clear all; close all; clc;
 % ------------------------ Script Parameters ------------------------
 
 % Hyperparameters for estimating the bicoherence
-K  = 15; K = 32;                % Number of segments
+K  = 32; K = 32;                % Number of segments
 fs = 256;                       % Sampling frequency
 fc = 32;                        % upper bound on frequency axis
 
