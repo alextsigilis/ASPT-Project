@@ -105,7 +105,7 @@ function Y = QPCfeatures(QPC, f, weighted)
 
             % (weighted) average of euclidean distance of bicoherence
             % peaks from the origin of the frequency axes
-            Y{i,"avgDist"} = sum(d .* b) / sum(b);
+            Y{i,"avgDist"} = sum(d .* b);
 
             % (weighted) maximum euclidean distance of bicoherence 
             % peaks from the origin of the frequency axes.
