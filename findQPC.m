@@ -47,7 +47,7 @@
 % 30sec epoch.
 % ---------------------------------------------------------------------
 
-function QPC = findQPC(b,f,epsilon)   
+function QPC = findQPC(b,epsilon)   
 
 % N: (integer) number of 30sec epochs per EEG channel
 N = size(b,1);
