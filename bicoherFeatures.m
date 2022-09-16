@@ -33,8 +33,8 @@ function [Y] = bicoherFeatures(X, f)
 
     % Initialize empty tables to store
     % features from the bicoherence matrices.
-    types = ["double" "double" "double" "string"];
-    names = ["ent1" "ent2" "avg" "Annotations"];
+    names = ["ent1" "ent2" "ent3" "avg" "Annotations"];
+    types = [repmat("double",1,numel(names)-1) "string"];
     sz = [N numel(types)];
 
     Y = table('Size',sz,'VariableTypes',types,'VariableNames',names);
@@ -47,13 +47,16 @@ function [Y] = bicoherFeatures(X, f)
         % Extract the entire bicoherence
         % matrix for a 30sec EEG segment
         bic = cell2mat(X{i,1});
-        p = bic(hex); q = p.^2;
+        p = bic(hex);                   % squared bicoherence
+        q = sqrt(p);                    % simple bicoherence
+        r = q .^ 1.5;                   % custom bicoherence
 
         % Extract features from the
         % bicoherence matrix
-        Y{i,"avg"}  = + mean(p);
-        Y{i,"ent1"} = - mean(p .* log2(p),'omitnan');
-        Y{i,"ent2"} = + log2(1 - 7.0 * mean(q .* log2(q),'omitnan'));
+        Y{i,"avg"}  = + mean(q);
+        Y{i,"ent1"} = - mean(q .* log2(q),'omitnan');
+        Y{i,"ent2"} = - mean(p .* log2(p),'omitnan');
+        Y{i,"ent3"} = - mean(r .* log2(r),'omitnan');
     end
 
     % Copy sleep stage annotations

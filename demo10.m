@@ -20,7 +20,7 @@ clear all; close all; clc;
 % ------------------------ Script Parameters ------------------------
 
 % Hyperparameters for estimating the bicoherence
-K  = 32; K = 32;                % Number of segments
+K = 32;                         % Number of segments
 fs = 256;                       % Sampling frequency
 fc = 32;                        % upper bound on frequency axis
 
@@ -30,16 +30,13 @@ start = 1;                      % first patient
 stop = 50;                      % last patient
 
 % Plot settings
-nbins = 100;                    % Number of histogram bins
-norm = "pdf";                   % Normalization type for histograms
-                                % cdf => cumulative distribution 
-                                % pdf => probability density function
+nbins = 40;                     % Number of histogram bins
 
 % ---------------- Do not change anything below ---------------------
 
 % Initialize empty tables to store bicoherence features
-types = ["double" "double" "double" "string"];
-names = ["ent1" "ent2" "avg" "Annotations"];
+names = ["ent1" "ent2" "ent3" "avg" "Annotations"];
+types = [repmat("double",1,numel(names)-1) "string"];
 sz = [0 numel(names)];
 
 Y = table('Size',sz,'VariableTypes',types,'VariableNames',names);
@@ -65,7 +62,6 @@ for i = start:stop
     % bicoherence matrices
     fprintf("Extracting bicoherence features ... ");
     Y = [Y; bicoherFeatures(X,f)];
-    % [D, U, A, B] = bicoherFeatures(X,f);
     fprintf("OK\n");
 
     fprintf("\n");
