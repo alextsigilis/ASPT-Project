@@ -3,7 +3,7 @@ clear all; close all; clc;
 % ------------------------ Script Parameters ------------------------
 
 % Hyperparameters for estimating the bicoherence
-K  = 32;                        % Number of segments
+K  = 24;                        % Number of segments
 fs = 256;                       % Sampling frequency
 fc = 32;                        % upper bound on frequency axis            
 
@@ -13,7 +13,7 @@ start = 1;                      % first patient
 stop = 50;                      % last patient
 
 % Plot settings
-nbins = [15 40 30 40 40];    % Number of histogram bins for each feature
+nbins = [8 30 30 30 30];    % Number of histogram bins for each feature
 
 % ---------------- Do not change anything below ---------------------
 
