@@ -33,7 +33,7 @@ function [Y] = bicoherFeatures(X, f)
 
     % Initialize empty tables to store
     % features from the bicoherence matrices.
-    names = ["ent1" "ent2" "ent3" "avg" "Annotations"];
+    names = ["ent1" "ent2" "ent3" "avg" "prc" "Annotations"];
     types = [repmat("double",1,numel(names)-1) "string"];
     sz = [N numel(types)];
 
@@ -51,12 +51,45 @@ function [Y] = bicoherFeatures(X, f)
         q = sqrt(p);                    % simple bicoherence
         r = q .^ 1.5;                   % custom bicoherence
 
-        % Extract features from the
-        % bicoherence matrix
+        % Extract features from the bicoherence matrix
+        % ---------------------------------------------
+
+        % average bicoherence
         Y{i,"avg"}  = + mean(q);
+
+        % bicoherence entropies
         Y{i,"ent1"} = - mean(q .* log2(q),'omitnan');
         Y{i,"ent2"} = - mean(p .* log2(p),'omitnan');
         Y{i,"ent3"} = - mean(r .* log2(r),'omitnan');
+
+        % 80% percentile frequency
+        k = 1; 
+        l = numel(f); 
+        bic = bic / sum(bic(:));
+        u = 1:numel(f); mask = u + u';
+
+        % Efficient binary-search algorithm for 80% frequency
+        while true
+            mid  = floor((k+l)/2);
+            
+            if mid == k
+                Y{i,"prc"} = f(mid);
+                break;
+            end
+
+            prc  = sum(bic(mask<=mid));
+
+            if prc == 0.75
+                Y{i,"prc"} = f(mid);
+                break;
+            elseif prc < 0.75
+                k = mid;
+            else 
+                l = mid;
+            end
+        end
+
+        Y{i,"prc"} = f(k);
     end
 
     % Copy sleep stage annotations
