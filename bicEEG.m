@@ -96,7 +96,6 @@ function [bic, freq] = bicEEG(X, K, fs, fc, channel, method)
     if K  <= 0 error("K must be positive "); end
     if fs <= 0 error("fs must be positive"); end
     if fc <= 0 error("fc must be positive"); end
-    if channel < 1 || channel > 4 error("invalid EEG channel"); end
 
     if method ~= "fancy" && method ~= "fast"
         error("Invalid estimation method");
