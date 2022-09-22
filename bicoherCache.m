@@ -118,7 +118,7 @@ for i = start:1:stop
     temp{:,2} = b2{:,1};
     temp{:,3} = b3{:,1};
     temp{:,4} = b4{:,1};
-    temp{:,5} = b4{i,2};
+    temp{:,5} = b4{:,2};
     
     bicTable = [bicTable; temp];
 
