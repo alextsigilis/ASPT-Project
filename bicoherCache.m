@@ -66,7 +66,7 @@ end
 % sleep stage Annotations
 sz    = [0 5];
 types = ["cell" "cell" "cell" "cell" "string"];
-names = ["EEGF4_M1" "EEGC4_M1" "EEGO2_M1" "EEGC3_M1" "Annotations"];
+names = ["EEGF4_M1" "EEGC4_M1" "EEGO2_M1" "EEGC3_M2" "Annotations"];
 
 bicTable = table(           ...
     'Size',sz,              ...
