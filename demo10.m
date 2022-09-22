@@ -25,46 +25,80 @@ fs = 256;                       % Sampling frequency
 fc = 32;                        % upper bound on frequency axis
 
 % Select patients and an EEG channel from the dataset
-channel = 4;                    % EEG channel
+channel = "EEGC3_M1";           % EEG channel
 start = 1;                      % first patient
 stop = 50;                      % last patient
 
 % Plot settings
-nbins = 40;                     % Number of histogram bins
+nbins = [40 40 40 40 10];       % Number of histogram bins
+
+% bicoherence cache file. 
+% You can use a cache file with precomputed biconerence 
+% matrices. By doing so, we can skip the stages of loading
+% the EEG recordings from the EDF files and computing their
+% bicoherence matrices. 
+% Instead, we can extract bicoherence features directly from
+% the cache file and decrease the execution time significantly.
+cacheFile = "bicoherCache.mat";
 
 % ---------------- Do not change anything below ---------------------
 
 % Initialize empty tables to store bicoherence features
-names = ["ent1" "ent2" "ent3" "avg" "Annotations"];
+names = ["ent1" "ent2" "ent3" "avg" "prc" "Annotations"];
 types = [repmat("double",1,numel(names)-1) "string"];
 sz = [0 numel(names)];
 
 Y = table('Size',sz,'VariableTypes',types,'VariableNames',names);
 
-% Extract bicoherence features from every patient
-for i = start:stop
-    % Make sure the input file exists
-    edf = sprintf("SN%03d.edf",i);
-    mat = sprintf("%03d.mat",i);
-    if (~isfile(edf)) && (~isfile(mat)) continue; end
+% First case: no cache files (tough luck !!!)
+if ~isfile(cacheFile)
+    fprintf("Missing cache file ...\n");
+    fprintf("Bicoherence matrices must be re-calculated\n\n");
 
-    % Load the EEG recordings 
-    fprintf("Loading EDF files for patient %d ... ",i);
-    Z = loadEDF(i);
+    % Extract bicoherence features from every patient
+    for i = start:stop
+        % Make sure the input file exists
+        edf = sprintf("SN%03d.edf",i);
+        mat = sprintf("%03d.mat",i);
+
+        if (~isfile(edf)) && (~isfile(mat)) continue; end
+
+        % Load the EEG recordings
+        fprintf("Loading EDF files for patient %d ... ",i);
+        Z = loadEDF(i);
+        fprintf("OK\n");
+
+        % Choose an EEG channel and estimate the bicoherence
+        fprintf("Estimating bicoherence matrix ... ");
+        [X,f] = bicEEG(Z,K,fs,fc,channel,"fast");
+        fprintf("OK\n");
+
+        % Extract features from every region of the
+        % bicoherence matrices
+        fprintf("Extracting bicoherence features ... ");
+        Y = [Y; bicoherFeatures(X,f)];
+        fprintf("OK\n");
+
+        fprintf("\n");
+    end
+
+% Second case: cache files exist
+elseif isfile(cacheFile)
+    % Debug message
+    fprintf("Cache file was found ...\n");
+
+    % Progress status
+    fprintf("Loading bicoherence matrices from cache ... ");
+    load(cacheFile, "bicTable");
+    load(cacheFile, "f");
     fprintf("OK\n");
-
-    % Choose an EEG channel and estimate the bicoherence
-    fprintf("Estimating bicoherence matrix ... ");
-    [X,f] = bicEEG(Z,K,fs,fc,channel,"fast");
-    fprintf("OK\n");
-
-    % Extract features from every region of the 
-    % bicoherence matrices
+    
+    % Progress status
     fprintf("Extracting bicoherence features ... ");
-    Y = [Y; bicoherFeatures(X,f)];
-    fprintf("OK\n");
-
-    fprintf("\n");
+    
+    % Extract bicoherence features from the selected EEG channel
+    Y = bicoherFeatures(bicTable(:,[channel "Annotations"]),f);
+    fprintf("OK\n\n");
 end
 
 % ----------------- Histograms of bicoherence features -----------------
@@ -90,11 +124,11 @@ for k = 1:K
     z5 = Y{N3,k};       % Features of sleep stage N3
 
     % Probability Density Functions for different sleep stages
-    [y1, x1] = hist(z1,nbins); y1 = (y1 * nbins) ./ (numel(z1) * range(z1));
-    [y2, x2] = hist(z2,nbins); y2 = (y2 * nbins) ./ (numel(z2) * range(z2));
-    [y3, x3] = hist(z3,nbins); y3 = (y3 * nbins) ./ (numel(z3) * range(z3));
-    [y4, x4] = hist(z4,nbins); y4 = (y4 * nbins) ./ (numel(z4) * range(z4));
-    [y5, x5] = hist(z5,nbins); y5 = (y5 * nbins) ./ (numel(z5) * range(z5));
+    [y1, x1] = hist(z1,nbins(k)); y1 = (y1 * nbins(k)) ./ (numel(z1) * range(z1));
+    [y2, x2] = hist(z2,nbins(k)); y2 = (y2 * nbins(k)) ./ (numel(z2) * range(z2));
+    [y3, x3] = hist(z3,nbins(k)); y3 = (y3 * nbins(k)) ./ (numel(z3) * range(z3));
+    [y4, x4] = hist(z4,nbins(k)); y4 = (y4 * nbins(k)) ./ (numel(z4) * range(z4));
+    [y5, x5] = hist(z5,nbins(k)); y5 = (y5 * nbins(k)) ./ (numel(z5) * range(z5));
  
     figure(idx); idx = idx + 1;
     plot(x1,y1,x2,y2,x3,y3,x4,y4,x5,y5); grid on;
