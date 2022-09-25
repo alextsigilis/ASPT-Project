@@ -31,12 +31,20 @@ channel = "EEGC3_M2";
 
 % dt: (int or float) duration of time window for cepstrum
 % fs: (int or float) sampling frequency of EEG/ECG recording
-dt = 5.0;
+dt = 5;
 fs = 256;
 
-% save folder for cepstrum plots
-% Adjust this variable to be compatible with your filesystem
+% path: (string) save folder for cepstrum plots. Adjust 
+% this variable to be compatible with your filesystem
 path = sprintf("C:\\Users\\User\\Desktop\\cepFigures");
+
+% format: (string) file extension for saving the cepstrum plots.
+% You can choose between "fig" and "png". The first option ("fig") is 
+% a proprietary file-format provided by Matlab which allows us to 
+% open the plots later by using the builtin openfig() MATLAB command.
+% The second option ("png") is an lossless-compression image format 
+% suitable for graphics objects.
+format = "fig";
 
 % ------------- Do not change anything below that point ------------- %
 
@@ -96,8 +104,11 @@ for k = 1:1:K
     % Progress bar
     fprintf("Progress: %d/%d\n",k,K);
 
-    % Plot of cepstral coefficients
+    % New display window
     f = figure(1);
+
+    % Plot of cepstral coefficients
+    subplot(2,1,1);
     plot(t, cell2mat(C{k,"ceps"})); grid on;
 
     % Crop the horizontal and vertical axes
@@ -105,13 +116,29 @@ for k = 1:1:K
     ylim([-5 +5]);
 
     % Add axis-labels and title
-    xlabel("quefrency in sec");
+    xlabel("quefrency in seconds");
     ylabel("cepstral coefficients");
     title(sprintf("Plot %d, %s",k, C{k,"Annotations"}));
 
+    % Plot of original EEG/ECG recording
+    subplot(2,1,2);
+    sig = cell2mat(Z{k,channel});
+    sig = lowpass(sig,32,fs);
+    tau = linspace(0,30,numel(sig));
+    plot(tau, sig); grid on;
+
+    % Add axis-labels and title
+    xlabel("time in seconds");
+    ylabel("signal in uVolts");
+
     % Save the cepstrum plot
-    savepath = sprintf("%s\\%s\\%d.png", path, C{k,"Annotations"}, k);
-    saveas(f, savepath);
+    savepath = sprintf("%s\\%s\\%d.%s", path, C{k,2}, k, format);
+    
+    if format == "fig" || format == "png"
+        saveas(f, savepath);
+    else
+        error("Invalid file format");
+    end
 
     % Pause the execution for 0.1 seconds.
     % This is required because of a bug in
@@ -121,4 +148,3 @@ for k = 1:1:K
     % random crashes persist.
     pause(0.1); clc;
 end
-
