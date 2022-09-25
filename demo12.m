@@ -31,8 +31,13 @@ channel = "EEGC3_M2";
 
 % dt: (int or float) duration of time window for cepstrum
 % fs: (int or float) sampling frequency of EEG/ECG recording
+% method: (string) Estimation technique for obtaining the
+% cepstral coefficients:
+%   => "cceps" for complex cepstrum 
+%   => "rceps" for real cepstrum
 dt = 5;
 fs = 256;
+method = "rceps";
 
 % path: (string) save folder for cepstrum plots. Adjust 
 % this variable to be compatible with your filesystem
@@ -45,6 +50,12 @@ path = sprintf("C:\\Users\\User\\Desktop\\cepFigures");
 % The second option ("png") is an lossless-compression image format 
 % suitable for graphics objects.
 format = "fig";
+
+% limits: (2x1 array of floats) Maximum and minimum values for the 
+% y-axis of the cepstrum plots. A good choice is [-5, +5] for complex
+% cepstra and [-0.5, +0.5] for real cepstra. You can experiment with
+% your own values.
+limits = [-0.5 +0.5]; 
 
 % ------------- Do not change anything below that point ------------- %
 
@@ -87,7 +98,7 @@ fprintf("Done\n");
 
 % Estimate cepstral coefficients
 fprintf("Estimating cepstral coefficients ... ");
-[C, t] = cepEEG(Z, fs, dt, channel);
+[C, t] = cepEEG(Z, fs, dt, channel, method);
 fprintf("Done\n");
 
 % ================================================================
@@ -113,14 +124,16 @@ for k = 1:1:K
 
     % Crop the horizontal and vertical axes
     xlim([0 dt/2]);
-    ylim([-5 +5]);
+    ylim(limits);
 
     % Add axis-labels and title
     xlabel("quefrency in seconds");
     ylabel("cepstral coefficients");
     title(sprintf("Plot %d, %s",k, C{k,"Annotations"}));
 
-    % Plot of original EEG/ECG recording
+    % Plot of original EEG/ECG recording 
+    % (Apply a lowpass filter with fpass = 32Hz
+    % to remove powerline interference at fc = 50Hz)
     subplot(2,1,2);
     sig = cell2mat(Z{k,channel});
     sig = lowpass(sig,32,fs);

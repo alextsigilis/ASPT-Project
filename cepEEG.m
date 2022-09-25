@@ -28,6 +28,10 @@
 % channel: (int or string) the selected EEG/ECG channel.
 % You can refer to a channel either by its name (eg "ECG",
 % "ECGC3_M2") or by its column index in table Z.
+%
+% method: (string) either "cceps" or "rceps". The first
+% option estimates the complex cepstrum. The second option
+% estimates the real cepstrum.
 % ---------------------------------------------------------
 %
 % Return Variables:
@@ -52,12 +56,13 @@
 % >> dt = 5.0;
 % >> fs = 256;
 % >> channel = "EEGC3_M2";
+% >> method = "cceps";
 % >> Z = loadEDF(patient_ID);
 % >> [C, ~] = cepEEG(Z, dt, fs, channel);
 % >> disp(C)
 % =========================================================
 
-function [C, t] = cepEEG(Z, fs, dt, channel)
+function [C, t] = cepEEG(Z, fs, dt, channel, method)
     % N: (int) number of 30sec EEG/ECG epochs
     % K: (int) number of partitions per epoch
     % M: (int) number of samples per partition
@@ -100,8 +105,15 @@ function [C, t] = cepEEG(Z, fs, dt, channel)
         % Estimate cepstral coefficients for every partition
         cc = zeros(M, 1);
 
-        for k = 1:1:K
-            cc = cc + cceps(x(:,k));
+        if method == "cceps"
+            for k = 1:1:K
+                cc = cc + cceps(x(:,k));
+            end
+            
+        elseif method == "rceps"
+            for k = 1:1:K
+                cc = cc + rceps(x(:,k));
+            end
         end
 
         % Save the result
