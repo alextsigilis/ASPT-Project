@@ -122,7 +122,9 @@ function [C, t] = cepEEG(Z, fs, dt, channel, method)
 
             for k = 1:1:K
                 h = fft(x(:,k));
-                cc = cc + log(epsilon + abs(h)) + 1i * rcunwrap(angle(h));
+                h = log(epsilon + abs(h)) + 1i * rcunwrap(angle(h));        % TODO: fix phase unwrapping (HOW?)
+                h = real(ifft(h));
+                cc = cc + h;
             end
 
             C{n,"ceps"} = {cc / K};

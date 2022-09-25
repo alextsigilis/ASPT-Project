@@ -51,10 +51,9 @@ path = sprintf("C:\\Users\\User\\Desktop\\cepFigures");
 format = "fig";
 
 % limits: (2x1 array of floats) Maximum and minimum values for the 
-% y-axis of the cepstrum plots. A good choice is [-5, +5] for complex
-% cepstra and [-0.5, +0.5] for real cepstra. You can experiment with
-% your own values.
-limits = [-0.5 +0.5]; 
+% y-axis of the cepstrum plots.  You can experiment until you find
+% a suitable pair of values.
+limits = [0 +1e-2]; 
 
 % ------------- Do not change anything below that point ------------- %
 
@@ -104,11 +103,16 @@ fprintf("Done\n");
 % Generate cepstrum plots and save them 
 % ================================================================
 
-K = size(C,1);
+% Notch filter for removing power-line interference
+f0 = 50; Q  = 64;
+w0 = 2*f0 / fs; bw = w0 / Q;
+[num, den] = iirnotch(w0,bw);
 
 % Plot every vector of cepstral coefficients
 fprintf("Generating plots of cepstral coefficients ...\n");
 pause(3); clc;
+
+K = size(C,1);
 
 for k = 1:1:K
     % Progress bar
@@ -119,7 +123,7 @@ for k = 1:1:K
 
     % Plot of cepstral coefficients
     subplot(2,1,1);
-    plot(t, cell2mat(C{k,"ceps"})); grid on;
+    plot(t, cell2mat(C{k,"ceps"}).^2); grid on;
 
     % Crop the horizontal and vertical axes
     xlim([0 dt/2]);
@@ -127,15 +131,13 @@ for k = 1:1:K
 
     % Add axis-labels and title
     xlabel("quefrency in seconds");
-    ylabel("cepstral coefficients");
+    ylabel("squared cepstral coefficients");
     title(sprintf("Plot %d, %s",k, C{k,"Annotations"}));
 
     % Plot of original EEG/ECG recording 
-    % (Apply a lowpass filter with fpass = 32Hz
-    % to remove powerline interference at fc = 50Hz)
     subplot(2,1,2);
     sig = cell2mat(Z{k,channel});
-    sig = lowpass(sig,32,fs);
+    sig = filtfilt(num,den,double(sig));
     tau = linspace(0,30,numel(sig));
     plot(tau, sig); grid on;
 
