@@ -4,8 +4,8 @@
 % ---------------------------------------------------------
 %
 % Function Description:
-% This function estimates the cepstral coefficients of
-% EEG and/or ECG recordings
+% This function estimates the real cepstral coefficients
+% of EEG and/or ECG recordings
 % ---------------------------------------------------------
 %
 % Arguments List:
@@ -29,9 +29,9 @@
 % You can refer to a channel either by its name (eg "ECG",
 % "ECGC3_M2") or by its column index in table Z.
 %
-% method: (string) either "cceps" or "rceps". The first
-% option estimates the complex cepstrum. The second option
-% estimates the real cepstrum.
+% method: (string) Choose between real and complex cepstrum
+%  => "cceps" estimates complex cepstrum coefficients
+%  => "rceps" estimates real cepstrum coefficients
 % ---------------------------------------------------------
 %
 % Return Variables:
@@ -70,11 +70,6 @@ function [C, t] = cepEEG(Z, fs, dt, channel, method)
     K = floor(30/dt);
     M = floor(dt * fs);
     
-    % epsilon: (float) small positive constant
-    % for numerical stability in floating point
-    % operations (such as division etc ...)
-    % epsilon = 1e-4;
-    
     % quefrency axis in seconds
     t = linspace(0, dt, M);
     
@@ -90,34 +85,48 @@ function [C, t] = cepEEG(Z, fs, dt, channel, method)
         'Size',           sz,     ...
         'VariableNames',  names,  ...
         'VariableTypes',  types);
-    
+
+    % Notch filter for removing power-line interference
+    f0 = 50; Q  = 64;
+    w0 = 2*f0 / fs; bw = w0 / Q;
+    [num, den] = iirnotch(w0,bw);
+
     for n = 1:N
         % Extract a 30sec EEG/ECG epoch
         x = cell2mat(Z{n,channel}); x = x(:);
-    
+
+        % Use the notch filter to remove powerline
+        % interference at 50Hz
+        x = double(x);
+        x = filtfilt(num, den, x);
+        x = single(x);
+
         % Partition into K segments of M samples
-        x = reshape(x(1:(K*M)), [M K]);
+        x = x(:); x = reshape(x(1:(K*M)), [M K]);
     
         % Normalize and apply a window function
         % x = (x - mean(x,1)) ./ (std(x,[],1) + epsilon);
         x = x .* hanning(M);
     
-        % Estimate cepstral coefficients for every partition
-        cc = zeros(M, 1);
+        % Estimate real cepstral coefficients for every partition
+        if method == "rceps"
+            epsilon = 1e-4;
+            h  = fft(x,[],1);
+            rc = real(ifft(log(epsilon + abs(h))));
+            rc = mean(rc,2);
+            C{n, "ceps"} = {rc};
 
-        if method == "cceps"
+        % Estimate complex cepstral coefficients for every partition
+        elseif method == "cceps"
+            cc = zeros(M, 1); epsilon = 1e-4;
+
             for k = 1:1:K
-                cc = cc + cceps(x(:,k));
+                h = fft(x(:,k));
+                cc = cc + log(epsilon + abs(h)) + 1i * rcunwrap(angle(h));
             end
-            
-        elseif method == "rceps"
-            for k = 1:1:K
-                cc = cc + rceps(x(:,k));
-            end
+
+            C{n,"ceps"} = {cc / K};
         end
-
-        % Save the result
-        C{n,"ceps"} = {cc / K};
 
         % Copy sleep stage Annotations
         C{n,"Annotations"} = Z{n,"Annotations"};

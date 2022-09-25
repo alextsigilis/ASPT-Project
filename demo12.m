@@ -31,10 +31,9 @@ channel = "EEGC3_M2";
 
 % dt: (int or float) duration of time window for cepstrum
 % fs: (int or float) sampling frequency of EEG/ECG recording
-% method: (string) Estimation technique for obtaining the
-% cepstral coefficients:
-%   => "cceps" for complex cepstrum 
-%   => "rceps" for real cepstrum
+% method: (string) choose between real and complex cepstrum 
+%   => "rceps" for real cepstrum coefficients
+%   => "cceps" for complex cepstrum coefficients
 dt = 5;
 fs = 256;
 method = "rceps";
