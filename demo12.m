@@ -26,7 +26,7 @@ clear all; close all; clc;
 
 % patient_ID: (int) selected patient
 % channel: (int or string) selected EEG/ECG recording
-patient_ID = 3;
+patient_ID = 10;
 channel = "EEGC3_M2";
 
 % dt: (int or float) duration of time window for cepstrum
@@ -34,9 +34,17 @@ channel = "EEGC3_M2";
 % method: (string) choose between real and complex cepstrum 
 %   => "rceps" for real cepstrum coefficients
 %   => "cceps" for complex cepstrum coefficients
-dt = 5;
+dt = 4;
 fs = 256;
 method = "rceps";
+
+% Hyperparameters for peak detector. 
+% See the documentation of the built-in findpeaks() method for details:
+% https://www.mathworks.com/help/signal/ref/findpeaks.html#buff2uu
+threshold       = 1e-4;
+prominence      = 0e-4;
+minpeakheight   = 3e-4;
+minpeakdistance = 5e-2; 
 
 % path: (string) save folder for cepstrum plots. Adjust 
 % this variable to be compatible with your filesystem
@@ -118,15 +126,28 @@ for k = 1:1:K
     % Progress bar
     fprintf("Progress: %d/%d\n",k,K);
 
+    % Extract cepstrum sequence and raise it to the power
+    % of two to increase the prominence of its peaks.
+    c = cell2mat(C{k,"ceps"}).^2;
+
+    % Discard the symmetric region of the cepstrum
+    c = c(0 <=t & t <= dt/2); t = t(0 <= t & t <= dt/2);
+
     % New display window
     f = figure(1);
 
-    % Plot of cepstral coefficients
+    % Plot of cepstral coefficients and cepstum sequence peaks
     subplot(2,1,1);
-    plot(t, cell2mat(C{k,"ceps"}).^2); grid on;
+    [pks, idx] = findpeaks(                 ...
+        c, t,                               ...
+        'Threshold', threshold,             ...
+        'MinPeakProminence', prominence,    ...
+        'MinPeakHeight', minpeakheight,     ...
+        'MinPeakDistance',minpeakdistance);
 
-    % Crop the horizontal and vertical axes
-    xlim([0 dt/2]);
+    plot(t, c, idx, pks, 'o'); grid on;
+
+    % Crop and vertical axes
     ylim(limits);
 
     % Add axis-labels and title
