@@ -58,7 +58,7 @@
 % >> channel = "EEGC3_M2";
 % >> method = "cceps";
 % >> Z = loadEDF(patient_ID);
-% >> [C, ~] = cepEEG(Z, dt, fs, channel);
+% >> [C, ~] = cepEEG(Z, fs, dt, channel, method);
 % >> disp(C)
 % =========================================================
 
