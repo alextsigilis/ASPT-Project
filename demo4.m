@@ -34,7 +34,7 @@ clear all; close all; clc;
 % sz: (float) marker size for scatter plots
 % path: save path for scatter plots
 n1 = 1; n2 = 20;
-channel = 4;
+channel = "EEGC3_M2";
 sz = 0.35;
 path = "C:\Users\USER\Desktop\figures4\";
 
@@ -80,7 +80,7 @@ for i = n1:1:n2
     % d) save the results and move on to the next patient
     
     fprintf("Loading EEG recordings from disk ...");
-    Z = loadEDF(i);
+    Z = loadEDF(i); Z = prefilter(Z,256,channel);
     fprintf("Done\n");
 
     fprintf("Extracting DWT coefficients ...");
@@ -135,7 +135,7 @@ for i = 1:1:numel(stages)
         zlabel('Kurtosis of DWT coefficients');
         title(sprintf("Delta waves %s vs %s", stages(i), stages(j)));
         legend(stages(i), stages(j));
-        saveas(f,sprintf("%s%02d.fig",path,idx));
+        % saveas(f,sprintf("%s%02d.fig",path,idx));
         idx = idx + 1;
 
         % scatter plot for theta waves
@@ -155,7 +155,7 @@ for i = 1:1:numel(stages)
         zlabel('Kurtosis of DWT coefficients');
         title(sprintf("Theta waves %s vs %s", stages(i), stages(j)));
         legend(stages(i), stages(j));
-        saveas(f,sprintf("%s%02d.fig",path,idx));
+        % saveas(f,sprintf("%s%02d.fig",path,idx));
         idx = idx + 1;
 
         % scatter plot for alpha waves
@@ -175,7 +175,7 @@ for i = 1:1:numel(stages)
         zlabel('Kurtosis of DWT coefficients');
         title(sprintf("Alpha waves %s vs %s", stages(i), stages(j)));
         legend(stages(i), stages(j));
-        saveas(f,sprintf("%s%02d.fig",path,idx));
+        % saveas(f,sprintf("%s%02d.fig",path,idx));
         idx = idx + 1;
 
         % scatter plot for beta  waves
@@ -195,7 +195,7 @@ for i = 1:1:numel(stages)
         zlabel('Kurtosis of DWT coefficients');
         title(sprintf("Beta waves %s vs %s", stages(i), stages(j)));
         legend(stages(i), stages(j));
-        saveas(f,sprintf("%s%02d.fig",path,idx));
+        % saveas(f,sprintf("%s%02d.fig",path,idx));
         idx = idx + 1;
     end
 end
