@@ -27,20 +27,17 @@
 %
 % fs: (int) The sampling frequency of the recordings expressed
 % in Hertz.
-% 
-% channel: (string) The name of the channel which we want to 
-% filter.
 % ---------------------------------------------------------------- 
 %
 % Return Variables:
 %
-% Y: (table) A table with two columns. The first column contains
-% 30sec epochs of the filtered signal. The second column contains
+% Y: (table) A table with N+1 columns. The first N column contain
+% 30sec epochs of the filtered signals. The last column contains
 % the Sleep stage Annotations.
 % ================================================================
 
-function Y = prefilter(X, fs, channel)
-    % H: an elliptical filter designed to remove
+function Y = prefilter(X, fs)
+    % H: an elliptic filter designed to remove
     % powerline interference at 50Hz and electrode
     % drift below 0.2Hz
     H = designfilt(                         ...
@@ -55,42 +52,37 @@ function Y = prefilter(X, fs, channel)
         'SampleRate',           fs,         ...
         'DesignMethod',         'ellip');
 
-    % N: number of 30sec epochs
-    % M: number of samples per 30sec epoch
-    N = size(X,1); sz = [N 2];
-    M = numel(cell2mat(X{1,channel}));
+    % N:  number of PSG channels
+    % K: number of 30sec epochs per channel
+    % dt: duration of epochs in seconds
+    % M:  number of samples per 30sec epoch
+    N  = size(X,2) - 1;
+    K  = size(X,1);
+    dt = 30;
+    M  = fs * dt;
 
-    % Y: a table which holds the 
-    % output of the elliptic filter.
-    names = [channel "Annotations"];
-    types = ["cell" "string"];
-
-    Y = table(                      ...
-        'Size',          sz,        ...
-        'VariableTypes', types,     ...
-        'VariableNames', names);
-
-    % Copy sleep stage Annotations
-    Y.Annotations = X.Annotations;
-    
-    % Extract the entire EEG signal
-    y = cell2mat(X{:,channel}); y = y(:);
-
-    % Zero padding
-    y = [zeros(fs, 1); y; zeros(fs, 1)];
-
-    % Apply elliptical filter
-    y = filtfilt(H,double(y));
-    y = single(y);
-
-    % Remove zero padding;
-    y = y((fs+1):1:end-fs);
-
-    % Split to 30sec epochs
-    y = reshape(y, [M N]);
-
-    % Save the output of the filter
     for n = 1:1:N
-        Y{n,channel} = {y(:,n)};
+        % Extract an entire PSG channel
+        x = cell2mat(X{:,n}); 
+        x = x(:);
+
+        % Zero padding
+        x = [zeros(fs,1); x; zeros(fs,1)];
+        
+        % Apply elliptic filter
+        x = filtfilt(H,double(x)); x = single(x);
+
+        % Remove zero padding
+        x = x((fs+1):1:(end-fs));
+
+        % Split channel to 30sec epochs again
+        x = reshape(x, [M K]);
+
+        % Store the output of the filter
+        for k = 1:1:K
+            X{k,n} = {x(:,n)};
+        end
     end
+
+    Y = X;
 end
