@@ -80,7 +80,7 @@ function Y = prefilter(X, fs)
 
         % Store the output of the filter
         for k = 1:1:K
-            X{k,n} = {x(:,n)};
+            X{k,n} = {x(:,k)};
         end
     end
 
