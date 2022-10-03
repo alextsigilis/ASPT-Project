@@ -39,7 +39,7 @@ dt = 30;            % Epoch duration of PSG recordings (in seconds)
 K  = 24;            % Number of partitions for bicoherence matrices
 fc = 32;            % Maximum frequency for bicoherence matrices
 
-% Save folder for feature files. (-mat files)
+% Save-folder for feature files. (-mat files)
 path = sprintf("C:\\Users\\USER\\Desktop\\features");
 
 % ===================================================================
@@ -47,12 +47,13 @@ path = sprintf("C:\\Users\\USER\\Desktop\\features");
 % ===================================================================
 
 for n = first:1:last
+    tic;
 
     % Make sure that the EDF/mat file exists
     edfFile = sprintf("SN%03d.edf",n);
     matFile = sprintf("%03d.mat",n);
 
-    if (~isfile(edfFile)) && (isfile(matFile))
+    if (~isfile(edfFile)) && (~isfile(matFile))
         continue;
     end
 
@@ -123,6 +124,16 @@ for n = first:1:last
     % TODO: store features in tables
 
     % ------------- Cepstrum Features --------------
+    fprintf("Extracting cepstral features ... ");
+    % rc1 = rcepFeatures(Z, "EEGF4_M1");
+    % rc2 = rcepFeatures(Z, "EEGC4_M1");
+    % rc3 = rcepFeatures(Z, "EEGO2_M1");
+    % rc4 = rcepFeatures(Z, "EEGC3_M2");
+    fprintf("Done\n");
+
+    toc;
+
+    % TODO: store features in tables
 
     % ---------------- EOG features ----------------
 
