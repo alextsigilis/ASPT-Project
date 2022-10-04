@@ -162,26 +162,40 @@ for n = first:1:last
     X = [X table2array(Y4(:,1:end-1))];
 
     % ------------- Cepstrum Features --------------
-    % fprintf("Extracting cepstral features ... ");
-    % rc1 = rcepFeatures(Z, "EEGF4_M1");
-    % rc2 = rcepFeatures(Z, "EEGC4_M1");
-    % rc3 = rcepFeatures(Z, "EEGO2_M1");
-    % rc4 = rcepFeatures(Z, "EEGC3_M2");
-    % fprintf("Done\n");
+    fprintf("Extracting cepstral features ... ");
+    [rc01, rc02, rc03, rc04] = rcepFeatures(Z, "EEGF4_M1");
+    [rc05, rc06, rc07, rc08] = rcepFeatures(Z, "EEGC4_M1");
+    [rc09, rc10, rc11, rc12] = rcepFeatures(Z, "EEGO2_M1");
+    [rc13, rc14, rc15, rc16] = rcepFeatures(Z, "EEGC3_M2");
+    fprintf("Done\n");
 
     % Copy cepstral features to X
-    % X = [X table2array(rc1(1:end-1))]; 
-    % X = [X table2array(rc2(1:end-1))]; 
-    % X = [X table2array(rc3(1:end-1))];
-    % X = [X table2array(rc4(1:end-1))]; 
+    X = [X table2array(rc01(:,1:end-1))]; 
+    X = [X table2array(rc02(:,1:end-1))]; 
+    X = [X table2array(rc03(:,1:end-1))]; 
+    X = [X table2array(rc04(:,1:end-1))]; 
+    X = [X table2array(rc05(:,1:end-1))]; 
+    X = [X table2array(rc06(:,1:end-1))]; 
+    X = [X table2array(rc07(:,1:end-1))];
+    X = [X table2array(rc08(:,1:end-1))]; 
+    X = [X table2array(rc09(:,1:end-1))]; 
+    X = [X table2array(rc10(:,1:end-1))]; 
+    X = [X table2array(rc11(:,1:end-1))]; 
+    X = [X table2array(rc12(:,1:end-1))]; 
+    X = [X table2array(rc13(:,1:end-1))]; 
+    X = [X table2array(rc14(:,1:end-1))]; 
+    X = [X table2array(rc15(:,1:end-1))]; 
+    X = [X table2array(rc16(:,1:end-1))]; 
 
-    % ---------------- EOG features ----------------
+    % -------------- EOG/EMG features --------------
+    fprintf("Extracting EOG/EMG features ... ");
+    Y = features_EOG_EMG(Z,true);
+    X = [X single(Y{:,1})];
+    fprintf("Done\n");
 
-    % ---------------- EMG features ----------------
-		
-		% Save extracted features to disk
-		fprintf("Saving extracted features to disk ... ");
-		filename = sprintf("%s\\%d.mat", path, n);
-		save(filename, "X", "y");
-		fprintf("Done\n\n");
+	% Save extracted features to disk
+	fprintf("Saving extracted features to disk ... ");
+	filename = sprintf("%s\\%d.mat", path, n);
+	save(filename, "X", "y");
+	fprintf("Done\n\n");
 end
