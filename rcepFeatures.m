@@ -29,23 +29,29 @@
 % ----------------------------------------------------------------
 %
 % Return variables:
-%   => delta (table): cepstral features for delta waves
-%   => theta (table): cepstral features for theta waves
-%   => alpha (table): cepstral features for alpha waves
-%   => beta  (table): cepstral features for beta waves
+%   => alpha1 (table): cepstral features for alpha waves (impulse response)
+%   => alpha2 (table): cepstral features for theta waves (input sequence)
+%   => beta1  (table): cepstral features for alpha waves (impulse response)
+%   => beta2  (table): cepstral features for beta waves  (input sequence)
 % ================================================================
 
-function [delta, theta, alpha, beta] = rcepFeatures(Z, channel)
+function [alpha1, beta1, alpha2, beta2] = rcepFeatures(Z, channel)
     N = size(Z,1);
 
-    sz = [N 6]; 
-    types = ["single" "single" "single" "single" "single" "string"];
-    names = ["mean" "std" "skw" "krt" "zcr" "Annotations"];
+    % Tables to store features
+    sz1    = [N 4]; 
+    types1 = ["single" "single" "single" "string"];
+    names1 = ["std" "skw" "krt" "Annotations"];
 
-    delta = table('Size',sz,'VariableTypes',types,'VariableNames',names);
-    theta = table('Size',sz,'VariableTypes',types,'VariableNames',names);
-    alpha = table('Size',sz,'VariableTypes',types,'VariableNames',names);
-    beta  = table('Size',sz,'VariableTypes',types,'VariableNames',names);
+    sz2    = [N 4];
+    types2 = ["single" "single" "single" "string"];
+    names2 = ["mean" "std" "zcr" "Annotations"];
+
+    alpha1 = table('Size',sz1,'VariableTypes',types1,'VariableNames',names1);
+    alpha2 = table('Size',sz2,'VariableTypes',types2,'VariableNames',names2);
+
+    beta1 = table('Size',sz1,'VariableTypes',types1,'VariableNames',names1);
+    beta2 = table('Size',sz2,'VariableTypes',types2,'VariableNames',names2);
 
     for n = 1:1:N
         % Extract 30sec EEG segment
@@ -57,64 +63,44 @@ function [delta, theta, alpha, beta] = rcepFeatures(Z, channel)
         z = modwt(z,"db6",5);
         z = modwtmra(z,"db6");
 
-        % Extract delta, theta, alpha and beta waves
-        win = hamming(7680); win = win(:);
-        z1 = z(1,:); z1 = z1(:) .* win;                     % delta waves                   
-        z2 = z(2,:); z2 = z2(:) .* win;                     % theta waves
-        z3 = z(3,:); z3 = z3(:) .* win;                     % alpha waves
-        z4 = z(4,:); z4 = z4(:) .* win;                     % beta waves
+        % Extract alpha and beta waves
+        win = hamming(7680); win = win(:);                
+        a = z(3,:); a = a(:) .* win;                     % alpha waves
+        b = z(4,:); b = b(:) .* win;                     % beta waves
 
         % Estimate cepstral coefficients for every frequency band
-        z1 = real(ifft(log(epsilon + abs(fft(z1)))));
-        z2 = real(ifft(log(epsilon + abs(fft(z2)))));
-        z3 = real(ifft(log(epsilon + abs(fft(z3)))));
-        z4 = real(ifft(log(epsilon + abs(fft(z4)))));
+        a = real(ifft(log(epsilon + abs(fft(a)))));
+        b = real(ifft(log(epsilon + abs(fft(b)))));
 
-        % Crop symmetric regions from cepstral sequences
+        % Split cepstral sequences (impulse response, input sequence)
         t = linspace(0,30,7680);
-        z1 = z1(0 <= t & t <= 2);
-        z2 = z2(0 <= t & t <= 2);
-        z3 = z3(0 <= t & t <= 2);
-        z4 = z4(0 <= t & t <= 2);
-        % z1 = z1(2 <= t & t <= 15);
-        % z2 = z2(2 <= t & t <= 15);
-        % z3 = z3(2 <= t & t <= 15);
-        % z4 = z4(2 <= t & t <= 15);
+        a1 = a(0 <= t & t <= 2);
+        b1 = b(0 <= t & t <= 2);
+        a2 = a(2 <= t & t <= 15);
+        b2 = b(2 <= t & t <= 15);
 
-        % absolute mean of cepstral coefficients
-        delta{n,"mean"} = mean(abs(z1));
-        theta{n,"mean"} = mean(abs(z2));
-        alpha{n,"mean"} = mean(abs(z3));
-        beta{n,"mean"}  = mean(abs(z4));
+        % Feature extraction 
+        alpha1{n,"std"} = std(a1);
+        alpha1{n,"skw"} = skewness(a1);
+        alpha1{n,"krt"} = kurtosis(a1);
 
-        % standard deviation of cepstral coefficients
-        delta{n,"std"} = std(z1);
-        theta{n,"std"} = std(z2);
-        alpha{n,"std"} = std(z3);
-        beta{n,"std"}  = std(z4);
+        alpha2{n,"mean"} = mean(abs(a2));
+        alpha2{n,"std"}  = std(a2);
+        alpha2{n,"zcr"}  = zerocrossrate(detrend(a2));
 
-        % skewness of cepstral coefficients
-        delta{n,"skw"} = skewness(z1);
-        theta{n,"skw"} = skewness(z2);
-        alpha{n,"skw"} = skewness(z3);
-        beta{n,"skw"}  = skewness(z4);
+        beta1{n,"std"} = std(b1);
+        beta1{n,"skw"} = skewness(b1);
+        beta1{n,"krt"} = kurtosis(b1);
 
-        % kurtosis of cepstral coefficients (log scale)
-        delta{n,"krt"} = log(1 + kurtosis(z1));
-        theta{n,"krt"} = log(1 + kurtosis(z2));
-        alpha{n,"krt"} = log(1 + kurtosis(z3));
-        beta{n,"krt"}  = log(1 + kurtosis(z4));
-
-        % zero crossing rate of cepstral coefficients
-        delta{n,"zcr"} = zerocrossrate(detrend(z1,1));
-        theta{n,"zcr"} = zerocrossrate(detrend(z2,1));
-        alpha{n,"zcr"} = zerocrossrate(detrend(z3,1));
-        beta{n,"zcr"}  = zerocrossrate(detrend(z4,1));
+        beta2{n,"mean"} = mean(abs(b2));
+        beta2{n,"std"}  = std(b2);
+        beta2{n,"zcr"}  = zerocrossrate(detrend(b2));
 
         % Copy sleep stage Annotations
-        delta{n,"Annotations"} = Z{n,"Annotations"};
-        theta{n,"Annotations"} = Z{n,"Annotations"};
-        alpha{n,"Annotations"} = Z{n,"Annotations"};
-        beta{n,"Annotations"}  = Z{n,"Annotations"};
+        alpha1{n,"Annotations"} = Z{n,"Annotations"};
+        alpha2{n,"Annotations"} = Z{n,"Annotations"};
+        
+        beta1{n,"Annotations"} = Z{n,"Annotations"};
+        beta2{n,"Annotations"} = Z{n,"Annotations"};
     end
 end
