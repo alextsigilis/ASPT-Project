@@ -13,6 +13,7 @@
 %   1) Bicoherence Features
 %   2) Cepstrum Features
 %   3) DWT features
+%		4) features from EOG and EMG recordings
 %
 % Those features are stored in .mat files and can later be used to 
 % to train classifiers for automatic sleep stage scoring.
@@ -41,6 +42,13 @@ fc = 32;            % Maximum frequency for bicoherence matrices
 
 % Save-folder for feature files. (-mat files)
 path = sprintf("C:\\Users\\USER\\Desktop\\features");
+
+% ------------- Do not change anything below that point -------------
+
+% Create a separate folder to save the extracted features
+if ~isfolder(path)
+	mkdir(path);
+end
 
 % ===================================================================
 % Feature Extraction
@@ -170,6 +178,10 @@ for n = first:1:last
     % ---------------- EOG features ----------------
 
     % ---------------- EMG features ----------------
-
-    fprintf("\n\n");
+		
+		% Save extracted features to disk
+		fprintf("Saving extracted features to disk ... ");
+		filename = sprintf("%s\\%d.mat", path, n);
+		save(filename, "X", "y");
+		fprintf("Done\n\n");
 end
