@@ -32,7 +32,7 @@ clc;            % Clear the terminal
 % ===================================================================
 
 first = 1;          % First patient selected from the dataset
-last  = 1;         % Last patient selected from the dataset
+last  = 154;        % Last patient selected from the dataset
 
 fs = 256;           % Sampling frequency of PSG recordings (in Hertz)
 dt = 30;            % Epoch duration of PSG recordings (in seconds)
@@ -55,6 +55,8 @@ end
 % ===================================================================
 
 for n = first:1:last
+    tic;
+
     % Make sure that the EDF/mat file exists
     edfFile = sprintf("SN%03d.edf",n);
     matFile = sprintf("%03d.mat",n);
@@ -198,4 +200,6 @@ for n = first:1:last
 	filename = sprintf("%s\\%d.mat", path, n);
 	save(filename, "X", "y");
 	fprintf("Done\n\n");
+
+    toc;
 end
