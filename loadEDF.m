@@ -13,7 +13,11 @@
 % idx: (integer) the index of the patient whose recordings
 % we want to read. There are 151 patients in the dataset.
 % Every patient is given an index ranging from 1 to 154.
-% Certain indices are missing. For example if we are
+% Certain indices are missing.
+%
+% dir: (string) The directory containing the edf files.
+% 
+% For example if we are
 % interested in reading the recordings of patient 4, then
 % we would use the following command:
 % >>> Z = loadEDF(4);
@@ -40,10 +44,15 @@
 % for every segment.
 % =========================================================
 
-function Z = loadEDF(idx)
+function Z = loadEDF(idx, dir)
 % =====================================================
 % 1) Read data from the EDF files
 % =====================================================
+
+% Check if `dir` is specified
+if nargin == 1
+    dir = uigetdir();
+end
 
 % input_file: (string) the name of the file
 % which contains the EEG recordings
@@ -51,9 +60,9 @@ function Z = loadEDF(idx)
 % which contains the EEG annotations
 % cache: (string) the name of the .mat file
 % which will be used as a cache file
-input_file = sprintf("SN%03d.edf",idx);
-annot_file = sprintf("SN%03d_sleepscoring.edf",idx);
-cache      = sprintf("%03d.mat",idx);
+input_file = fullfile(dir, sprintf("SN%03d.edf",idx));
+annot_file = fullfile(dir, sprintf("SN%03d_sleepscoring.txt",idx));
+cache      = fullfile("cache", sprintf("%03d.mat",idx));
 
 % Make sure that the input files or the cache file exist
 if (~isfile(input_file) || ~isfile(annot_file)) && (~isfile(cache))
@@ -72,7 +81,7 @@ end
 % y:    (timetable) the sleep stage annotations
 % info: metadata of the input file
 [X,~] = edfread(input_file);
-[~,y] = edfread(annot_file);
+y = readtable(annot_file);
 info  = edfinfo(input_file);
 
 % N: (integer) number of data records per recording
@@ -115,14 +124,14 @@ valid_stages = cellstr([ ...
     "Sleep stage R"]);
 
 % w: the duration of every labeled segment in seconds
-w = duration("00:00:30");
+w = 30;
 
 % Find rows which contain invalid labels.
 % Certain labels contain information about
 % the light conditions inside the recording room.
 % Those labels should be discarded
 rows = ~ismember(                ...
-    categorical(y.Annotations),  ...
+    categorical(y.Annotation),  ...
     categorical(valid_stages)    ...
     );
 
@@ -157,8 +166,8 @@ Z = cell(K,M);
 for i = 1:1:K
     % t0: onset of current label in seconds
     % [t0,t1]: time interval of current label
-    t0 = y.Onset(i);
-    t1 = t0 + w;
+    t0 = y.RecordingOnset(i); t0 = duration(0,0,t0);
+    t1 = t0 + duration(0,0,w);
     dt = timerange(t0,t1);
 
     for j = 1:1:M
@@ -170,7 +179,7 @@ end
 % convert cell-array to timetable and adjust variable names
 Z = cell2table(Z);
 Z = renamevars(Z,Z.Properties.VariableNames,channel_names);
-Z = addvars(Z,y.Annotations,'NewVariableNames','Annotations');
-Z = addvars(Z,y.Onset,'NewVariableNames','Onset');
+Z = addvars(Z, y.Annotation, 'NewVariableNames', 'Annotations');
+Z = addvars(Z, duration(0,0,y.RecordingOnset), 'NewVariableNames', 'Onset');
 Z = table2timetable(Z);
 end

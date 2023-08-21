@@ -13,8 +13,6 @@
 %
 % Script parameters:
 % 
-% start: (integer) first patient selected from the dataset
-% stop:  (integer) last patient selected from the dataset
 % cacheFile: (string) name of the final mat file.
 % K:      (integer) number of segments when estimating the bicoherence
 % fs:     (integer) EEG-sampling frequency in Hertz
@@ -42,10 +40,6 @@
 % Reset your Matlab workspace
 clear all; close all; clc;
 
-% Script parameters (See documentation)
-start = 1;
-stop  = 50;
-
 cacheFile = "bicoherCache.mat";
 
 K  = 32;
@@ -54,6 +48,12 @@ fc = 32;
 method = "fast";
 
 % --------------- Do not change anything below that point ---------------
+
+% Disable all warning
+warning('off','all');
+
+% Select edf files
+[files, path] = uigetfile("*.edf", 'MultiSelect', 'on');
 
 % Delete previous cache files
 if isfile(cacheFile)
@@ -64,9 +64,11 @@ end
 
 % Initialise an empty table to store the bicoherence matrices and the 
 % sleep stage Annotations
-sz    = [0 5];
-types = ["cell" "cell" "cell" "cell" "string"];
-names = ["EEGF4_M1" "EEGC4_M1" "EEGO2_M1" "EEGC3_M2" "Annotations"];
+nchan = 8;
+sz    = [0 9];
+types = ["cell" "cell" "cell" "cell" "cell" "cell" "cell" "cell" "string"];
+names = ["EEGF4_M1", "EEGC4_M1", "EEGO2_M1", "EEGC3_M2", "EMGChin", "EOGE1_M2", "EOGE2_M2", "ECG", "Annotations"];
+
 
 bicTable = table(           ...
     'Size',sz,              ...
@@ -74,10 +76,14 @@ bicTable = table(           ...
     'VariableNames',names);
 
 % Iterate through all the selected patients
-for i = start:1:stop
+for i = 1:numel(files)
+    
+    file = files{i};
+    pid = str2num(file(3:5));
+
     % Make sure that the input file exists
-    edfFile = sprintf("SN%03d.edf",i);
-    matFile = sprintf("%03d.mat",i);
+    edfFile = fullfile(path, sprintf("SN%03d.edf",pid));
+    matFile = sprintf("%03d.mat",pid);
 
     if (~isfile(edfFile)) && (~isfile(matFile))
         continue;
@@ -85,40 +91,32 @@ for i = start:1:stop
 
     % Progress status
     tic; 
-    fprintf("Patient: %d\n", i);
-
+    fprintf("Patient: %d\n", pid);
+    
     % Load the EEG recordings
     fprintf("Loading EEG recordings\n");
-    Z = loadEDF(i); N = size(Z,1);
+    Z = loadEDF(pid, path); N = size(Z,1);
     
-    % bicoherence on the first EEG channel
-    fprintf("Estimating bicoherence in EEG channel 1\n");
-    [b1, ~] = bicEEG(Z,K,fs,fc,1,method);
-
-    % bicoherence on the second EEG channel
-    fprintf("Estimating bicoherence in EEG channel 2\n");
-    [b2, ~] = bicEEG(Z,K,fs,fc,2,method);
-
-    % bicoherence on the third EEG channel
-    fprintf("Estimating bicoherence in EEG channel 3\n");
-    [b3, ~] = bicEEG(Z,K,fs,fc,3,method);
-
-    % bicoherence on the fourth EEG channel
-    fprintf("Estimating bicoherence in EEG channel 4\n");
-    [b4, f] = bicEEG(Z,K,fs,fc,4,method);
+    b = {};
+    
+    for j = 1:nchan
+        % bicoherence on the j-th channel
+        fprintf("Estimating bicoherence in channel %d\n", j);
+        [b{j}, ~] = bicEEG(Z,K,fs,fc,1,method);
+    end
 
     % Save the bicoherence matrices in the table
     fprintf("Saving results in memory\n");
     temp = table(               ...
-        'Size',[N 5],           ...
+        'Size',[N sz(2)],           ...
         'VariableTypes',types,  ...
         'VariableNames',names);
     
-    temp{:,1} = b1{:,1};
-    temp{:,2} = b2{:,1};
-    temp{:,3} = b3{:,1};
-    temp{:,4} = b4{:,1};
-    temp{:,5} = b4{:,2};
+    for j = 1:nchan
+        bj = b{j};
+        temp{:,j} = bj{:,1};
+    end
+    temp{:,9} = bj{:,2}; % !!!! The table has 9 collumns, the last on is the annotations.
     
     bicTable = [bicTable; temp];
 
@@ -130,7 +128,7 @@ end
 
 % Copy the bicoherence matrices in a cache file (mat file)
 fprintf("Memory dump. Please wait ... ");
-save(cacheFile,"bicTable", "f", "K", "fs", "fc", "method");
+save(cacheFile,"bicTable", "K", "fs", "fc", "method");
 fprintf("Done\n\n");
 
 % Progress status

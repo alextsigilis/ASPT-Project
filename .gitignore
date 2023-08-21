@@ -1,0 +1,9 @@
+physionet.org/*
+key.txt
+*.pickle
+__pycache__/*
+cache/*
+bin/
+*.asv
+recordings/*
+*.mat
