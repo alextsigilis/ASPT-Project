@@ -7,3 +7,4 @@ bin/
 *.asv
 recordings/*
 *.mat
+.DS_Store

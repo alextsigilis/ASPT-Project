@@ -44,37 +44,27 @@
 % for every segment.
 % =========================================================
 
-function Z = loadEDF(idx, dir)
+function Z = loadEDF(idx)
 % =====================================================
 % 1) Read data from the EDF files
 % =====================================================
 
-% Check if `dir` is specified
-if nargin == 1
-    dir = uigetdir();
-end
+warning ('off','all');
 
-% input_file: (string) the name of the file
-% which contains the EEG recordings
-% annot_file: (string) the name of the file
-% which contains the EEG annotations
-% cache: (string) the name of the .mat file
-% which will be used as a cache file
-input_file = fullfile(dir, sprintf("SN%03d.edf",idx));
-annot_file = fullfile(dir, sprintf("SN%03d_sleepscoring.txt",idx));
-cache      = fullfile("cache", sprintf("%03d.mat",idx));
+% Check if `dir` is specified
+if ~exist('idx', 'var')
+    [filename, dir] = uigetfile(".edf");
+    idx = str2num(filename(3:5));
+    input_file = fullfile(dir, sprintf("SN%03d.edf",idx));
+    annot_file = fullfile(dir, sprintf("SN%03d_sleepscoring.txt",idx));
+else
+    input_file = sprintf("SN%03d.edf",idx);
+    annot_file = sprintf("SN%03d_sleepscoring.txt",idx);
+end
 
 % Make sure that the input files or the cache file exist
 if (~isfile(input_file) || ~isfile(annot_file)) && (~isfile(cache))
     error("Error: Input files not found\n\n");
-end
-
-% Try to retrieve the EDF recordings from the cache files.
-% (Depending on your storage medium this can be up to 10
-% times faster)
-if isfile(cache)
-    load(cache,'Z');
-    return;
 end
 
 % X:    (timetable) the EEG/EOG/EMG/ECG recordings
